@@ -1,7 +1,6 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Report } from './ReportForm';
-import { getFullJalaliDate, formatJalali } from '@/utils/jalali';
 import { ClipboardCopy, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -9,9 +8,10 @@ interface FormattedReportProps {
   reports: Report[];
   date: string;
   onEditReport?: (report: Report) => void;
+  isAccordion?: boolean;
 }
 
-const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEditReport }) => {
+const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEditReport, isAccordion = false }) => {
   // Convert 24-hour format to Persian time notation (صبح/بعدازظهر)
   const toPersianTimeFormat = (time24: string): string => {
     const [hours, minutes] = time24.split(':').map(Number);
@@ -129,6 +129,82 @@ const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEdit
       .catch(() => toast.error('خطا در کپی گزارش'));
   };
 
+  // If used inside accordion, render a more compact version
+  if (isAccordion) {
+    return (
+      <div className="pb-4">
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="neon-text text-xl">📊 جمع ساعات مطالعه شما در تاریخ {formattedDate}</h3>
+          <div className="flex gap-2">
+            <button 
+              onClick={copyToClipboard}
+              className="p-2 rounded-full bg-background/40 hover:bg-background/60 transition-colors"
+              title="کپی گزارش"
+            >
+              <ClipboardCopy className="h-5 w-5 text-neon" />
+            </button>
+          </div>
+        </div>
+        
+        <div className="space-y-4">
+          {reports.map((report, index) => {
+            const timeDiff = calculateTimeDifference(report.startTime, report.endTime);
+            const persianStartTime = toPersianTimeFormat(report.startTime);
+            const persianEndTime = toPersianTimeFormat(report.endTime);
+            
+            return (
+              <div key={report.id} className="border border-neon/30 rounded-md p-4 bg-background/40">
+                <div className="flex justify-between items-start">
+                  <h5 className="font-bold text-neon">
+                    {index + 1}. {report.courseName}
+                  </h5>
+                  {onEditReport && (
+                    <button 
+                      onClick={() => onEditReport(report)}
+                      className="p-1 rounded-full bg-background/40 hover:bg-background/60 transition-colors"
+                      title="ویرایش گزارش"
+                    >
+                      <Edit className="h-4 w-4 text-neon" />
+                    </button>
+                  )}
+                </div>
+                <p className="mr-5">⏱ زمان: {persianStartTime} تا {persianEndTime} ({timeDiff})</p>
+                {report.description && (
+                  <p className="mr-5">📝 توضیحات: {report.description}</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        
+        <div className="mt-6 border-t border-neon/30 pt-4">
+          <h4 className="font-bold mb-2">📈 مقایسه با روز قبل:</h4>
+          {timeDifference > 0 ? (
+            <>
+              <p className="text-green-400">
+                ✅ امروز {Math.floor(timeDifference / 60).toString().padStart(2, '0')}:{(timeDifference % 60).toString().padStart(2, '0')} ({percentageDiff}%) بیشتر از دیروز مطالعه داشتی!
+              </p>
+              <p className="text-green-400">💯 به خودت ببال، این پیشرفت نتیجه تلاش مستمر توست.</p>
+            </>
+          ) : timeDifference < 0 ? (
+            <>
+              <p className="text-yellow-400">
+                ⚠️ امروز {Math.floor(Math.abs(timeDifference) / 60).toString().padStart(2, '0')}:{(Math.abs(timeDifference) % 60).toString().padStart(2, '0')} ({Math.abs(percentageDiff)}%) کمتر از دیروز مطالعه داشتی.
+              </p>
+              <p className="text-yellow-400">🔄 سعی کن فردا جبران کنی!</p>
+            </>
+          ) : (
+            <>
+              <p className="text-blue-400">📊 مطالعه امروز مساوی با دیروز بود.</p>
+              <p className="text-blue-400">🔄 سعی کن فردا بیشتر مطالعه کنی!</p>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Standard view (non-accordion)
   return (
     <div className="neon-card p-6 text-right" dir="rtl">
       <div className="flex justify-between items-start mb-4">
