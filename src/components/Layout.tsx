@@ -12,7 +12,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <div className="container mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center">
           <div className="flex items-center mb-3 sm:mb-0">
             <div className="flex items-center">
-              <img src="https://cdn.imgurl.ir/uploads/n479793_photo_--_--.jpg" alt="Logo" className="h-8 w-8 mr-2" />
+              <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[#ea384c] shadow-[0_0_10px_rgba(234,56,76,0.7)] mr-2">
+                <img src="https://cdn.imgurl.ir/uploads/n479793_photo_--_--.jpg" alt="Logo" className="h-full w-full object-cover" />
+              </div>
               <h1 className="neon-text text-2xl mr-4">سایت مدیریت زمان</h1>
             </div>
             <p className="text-sm text-muted-foreground">by <a href="https://Ya3in.ir" target="_blank" rel="noopener noreferrer" className="neon-text text-xs">Ya3in.ir</a></p>

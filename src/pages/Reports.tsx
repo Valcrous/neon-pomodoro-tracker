@@ -5,6 +5,7 @@ import ReportForm, { Report } from '@/components/ReportForm';
 import ReportSearch from '@/components/ReportSearch';
 import ReportList from '@/components/ReportList';
 import { toast } from 'sonner';
+import { getCurrentJalaliDate } from '@/utils/jalali';
 
 const Reports: React.FC = () => {
   const [reports, setReports] = useState<Report[]>([]);
@@ -38,7 +39,11 @@ const Reports: React.FC = () => {
       toast.success('گزارش با موفقیت بروزرسانی شد');
     } else {
       // Add new report
-      setReports(prev => [newReport, ...prev]);
+      // Ensure today's date is used
+      const today = getCurrentJalaliDate();
+      const reportWithToday = {...newReport, date: today};
+      
+      setReports(prev => [reportWithToday, ...prev]);
       toast.success('گزارش با موفقیت ثبت شد');
     }
   };

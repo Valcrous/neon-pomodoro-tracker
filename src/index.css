@@ -39,6 +39,10 @@
     --neon: 54 100% 68%;
     --neon-foreground: 0 0% 0%;
     --neon-glow: 54 100% 68%;
+    
+    /* Red neon */
+    --red-neon: 0 100% 65%;
+    --red-neon-glow: 0 100% 65%;
   }
 
   .theme-red {
@@ -66,6 +70,20 @@
     text-shadow: 0 0 5px hsl(var(--neon-glow) / 0.7),
                  0 0 10px hsl(var(--neon-glow) / 0.5),
                  0 0 15px hsl(var(--neon-glow) / 0.3);
+  }
+
+  .red-neon-text {
+    @apply font-bold tracking-wider;
+    color: hsl(var(--red-neon));
+    text-shadow: 0 0 5px hsl(var(--red-neon-glow) / 0.7),
+                 0 0 10px hsl(var(--red-neon-glow) / 0.5),
+                 0 0 15px hsl(var(--red-neon-glow) / 0.3);
+  }
+
+  .red-neon-border {
+    @apply border-[#ea384c] border-2 rounded-md shadow-lg;
+    box-shadow: 0 0 5px rgba(234, 56, 76, 0.7),
+                0 0 10px rgba(234, 56, 76, 0.3) inset;
   }
 
   .neon-border {

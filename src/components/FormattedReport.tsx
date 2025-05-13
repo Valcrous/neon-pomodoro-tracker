@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Report } from './ReportForm';
-import { getFullJalaliDate } from '@/utils/jalali';
+import { getFullJalaliDate, formatJalali } from '@/utils/jalali';
 import { ClipboardCopy, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -83,7 +83,8 @@ const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEdit
   const timeDifference = totalMinutes - previousDayMinutes;
   const percentageDiff = Math.round((timeDifference / previousDayMinutes) * 100 * 10) / 10;
   
-  const formattedDate = getFullJalaliDate(new Date(date));
+  // Use numeric format for the date
+  const formattedDate = date;
   
   // Function to copy formatted report to clipboard
   const copyToClipboard = () => {
