@@ -4,10 +4,12 @@ import Layout from '@/components/Layout';
 import ReportForm, { Report } from '@/components/ReportForm';
 import ReportSearch from '@/components/ReportSearch';
 import ReportList from '@/components/ReportList';
+import { toast } from 'sonner';
 
 const Reports: React.FC = () => {
   const [reports, setReports] = useState<Report[]>([]);
   const [searchDate, setSearchDate] = useState('');
+  const [editingReport, setEditingReport] = useState<Report | null>(null);
   
   // Load reports from localStorage on mount
   useEffect(() => {
@@ -27,7 +29,24 @@ const Reports: React.FC = () => {
   }, [reports]);
   
   const handleAddReport = (newReport: Report) => {
-    setReports(prev => [newReport, ...prev]);
+    if (editingReport) {
+      // Update existing report
+      setReports(prev => prev.map(report => 
+        report.id === editingReport.id ? newReport : report
+      ));
+      setEditingReport(null);
+      toast.success('گزارش با موفقیت بروزرسانی شد');
+    } else {
+      // Add new report
+      setReports(prev => [newReport, ...prev]);
+      toast.success('گزارش با موفقیت ثبت شد');
+    }
+  };
+  
+  const handleEditReport = (report: Report) => {
+    setEditingReport(report);
+    // Scroll to the form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
   const handleSearch = (date: string) => {
@@ -37,12 +56,12 @@ const Reports: React.FC = () => {
   return (
     <Layout>
       <div className="space-y-12">
-        <ReportForm onAddReport={handleAddReport} />
+        <ReportForm onAddReport={handleAddReport} initialReport={editingReport} />
         
         <div>
           <h2 className="neon-text text-2xl mb-6 text-center">گزارشات ثبت شده</h2>
           <ReportSearch onSearch={handleSearch} />
-          <ReportList reports={reports} searchDate={searchDate} />
+          <ReportList reports={reports} searchDate={searchDate} onEditReport={handleEditReport} />
         </div>
       </div>
     </Layout>

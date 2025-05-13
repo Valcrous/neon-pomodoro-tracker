@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatJalali, getCurrentJalaliDate } from '@/utils/jalali';
 import { toast } from 'sonner';
 
 interface ReportFormProps {
   onAddReport: (report: Report) => void;
+  initialReport?: Report | null;
 }
 
 export interface Report {
@@ -16,20 +17,36 @@ export interface Report {
   description: string;
 }
 
-const ReportForm: React.FC<ReportFormProps> = ({ onAddReport }) => {
+const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport }) => {
   const [courseName, setCourseName] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [description, setDescription] = useState('');
   const [showForm, setShowForm] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
 
   const today = getCurrentJalaliDate();
+
+  // Set form values when editing an existing report
+  useEffect(() => {
+    if (initialReport) {
+      setCourseName(initialReport.courseName);
+      setStartTime(initialReport.startTime);
+      setEndTime(initialReport.endTime);
+      setDescription(initialReport.description);
+      setIsEditing(true);
+      setShowForm(true);
+    } else {
+      setIsEditing(false);
+    }
+  }, [initialReport]);
 
   const resetForm = () => {
     setCourseName('');
     setStartTime('');
     setEndTime('');
     setDescription('');
+    setIsEditing(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -43,27 +60,29 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport }) => {
     
     // Create report object
     const newReport: Report = {
-      id: crypto.randomUUID(),
-      date: today,
+      id: isEditing && initialReport ? initialReport.id : crypto.randomUUID(),
+      date: isEditing && initialReport ? initialReport.date : today,
       courseName,
       startTime,
       endTime,
       description
     };
     
-    // Add to reports
+    // Add or update report
     onAddReport(newReport);
     
     // Reset form or ask for another entry
-    toast.success('گزارش با موفقیت ثبت شد');
-    
-    // Ask if user wants to add another report
-    const addAnother = window.confirm('آیا می‌خواهید گزارش دیگری برای امروز ثبت کنید؟');
-    if (addAnother) {
-      resetForm();
+    if (!isEditing) {
+      // Ask if user wants to add another report
+      const addAnother = window.confirm('آیا می‌خواهید گزارش دیگری برای امروز ثبت کنید؟');
+      if (addAnother) {
+        resetForm();
+      } else {
+        resetForm();
+        setShowForm(false);
+      }
     } else {
       resetForm();
-      setShowForm(false);
     }
   };
   
@@ -82,8 +101,10 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport }) => {
 
   return (
     <div className="neon-card max-w-2xl mx-auto" dir="rtl">
-      <h2 className="neon-text text-xl mb-6 text-center">ثبت گزارش جدید</h2>
-      <p className="text-center mb-4">تاریخ: {today}</p>
+      <h2 className="neon-text text-xl mb-6 text-center">
+        {isEditing ? 'ویرایش گزارش' : 'ثبت گزارش جدید'}
+      </h2>
+      {!isEditing && <p className="text-center mb-4">تاریخ: {today}</p>}
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -138,8 +159,17 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport }) => {
         
         <div className="flex justify-center pt-4">
           <button type="submit" className="neon-button">
-            ثبت گزارش
+            {isEditing ? 'بروزرسانی گزارش' : 'ثبت گزارش'}
           </button>
+          {isEditing && (
+            <button 
+              type="button"
+              onClick={resetForm}
+              className="neon-button mr-2"
+            >
+              انصراف
+            </button>
+          )}
         </div>
       </form>
     </div>

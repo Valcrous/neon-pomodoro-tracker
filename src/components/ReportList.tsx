@@ -2,13 +2,15 @@
 import React from 'react';
 import { Report } from './ReportForm';
 import { getFullJalaliDate, parseJalaliString } from '@/utils/jalali';
+import FormattedReport from './FormattedReport';
 
 interface ReportListProps {
   reports: Report[];
   searchDate: string;
+  onEditReport?: (report: Report) => void;
 }
 
-const ReportList: React.FC<ReportListProps> = ({ reports, searchDate }) => {
+const ReportList: React.FC<ReportListProps> = ({ reports, searchDate, onEditReport }) => {
   // Filter reports if search date is provided
   const filteredReports = searchDate
     ? reports.filter(report => report.date.includes(searchDate))
@@ -45,39 +47,14 @@ const ReportList: React.FC<ReportListProps> = ({ reports, searchDate }) => {
 
   return (
     <div className="space-y-8" dir="rtl">
-      {Object.entries(groupedReports).map(([date, dateReports]) => {
-        // Convert string date to proper date object for formatting
-        const dateObj = parseJalaliString(date);
-        const formattedDate = dateObj ? getFullJalaliDate(dateObj) : date;
-        
-        return (
-          <div key={date} className="neon-card">
-            <h3 className="neon-text text-lg mb-4">{formattedDate}</h3>
-            
-            <div className="space-y-4">
-              {dateReports.map(report => (
-                <div 
-                  key={report.id} 
-                  className="p-4 border border-neon/30 rounded-md bg-background/40 hover:bg-background/60 transition-colors"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-bold text-neon">{report.courseName}</h4>
-                    <div className="text-sm">
-                      <span>{report.startTime}</span>
-                      <span className="mx-1">-</span>
-                      <span>{report.endTime}</span>
-                    </div>
-                  </div>
-                  
-                  {report.description && (
-                    <p className="text-muted-foreground mt-2">{report.description}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
+      {Object.entries(groupedReports).map(([date, dateReports]) => (
+        <FormattedReport 
+          key={date} 
+          reports={dateReports} 
+          date={date} 
+          onEditReport={onEditReport}
+        />
+      ))}
     </div>
   );
 };
