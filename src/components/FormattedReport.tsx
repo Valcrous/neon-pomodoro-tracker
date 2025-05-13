@@ -12,6 +12,27 @@ interface FormattedReportProps {
 }
 
 const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEditReport }) => {
+  // Convert 24-hour format to Persian time notation (صبح/بعدازظهر)
+  const toPersianTimeFormat = (time24: string): string => {
+    const [hours, minutes] = time24.split(':').map(Number);
+    let persianHours = hours;
+    let suffix = 'صبح';
+    
+    if (hours >= 12) {
+      suffix = 'بعدازظهر';
+      if (hours > 12) {
+        persianHours = hours - 12;
+      }
+    }
+    
+    // Convert 0 hour to 12 for midnight
+    if (persianHours === 0) {
+      persianHours = 12;
+    }
+    
+    return `${persianHours}:${minutes.toString().padStart(2, '0')} ${suffix}`;
+  };
+
   // Calculate total study time
   const calculateTotalTime = (reports: Report[]): string => {
     let totalMinutes = 0;
@@ -72,8 +93,11 @@ const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEdit
     
     reports.forEach((report, index) => {
       const timeDiff = calculateTimeDifference(report.startTime, report.endTime);
+      const persianStartTime = toPersianTimeFormat(report.startTime);
+      const persianEndTime = toPersianTimeFormat(report.endTime);
+      
       formattedText += `${index + 1}. ${report.courseName}\n`;
-      formattedText += `   ⏱ زمان: ${report.startTime} تا ${report.endTime} (${timeDiff})\n`;
+      formattedText += `   ⏱ زمان: ${persianStartTime} تا ${persianEndTime} (${timeDiff})\n`;
       if (report.description) {
         formattedText += `   📝 توضیحات: ${report.description}\n`;
       }
@@ -128,6 +152,8 @@ const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEdit
         <div className="space-y-4">
           {reports.map((report, index) => {
             const timeDiff = calculateTimeDifference(report.startTime, report.endTime);
+            const persianStartTime = toPersianTimeFormat(report.startTime);
+            const persianEndTime = toPersianTimeFormat(report.endTime);
             
             return (
               <div key={report.id} className="border border-neon/30 rounded-md p-4 bg-background/40">
@@ -145,7 +171,7 @@ const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEdit
                     </button>
                   )}
                 </div>
-                <p className="mr-5">⏱ زمان: {report.startTime} تا {report.endTime} ({timeDiff})</p>
+                <p className="mr-5">⏱ زمان: {persianStartTime} تا {persianEndTime} ({timeDiff})</p>
                 {report.description && (
                   <p className="mr-5">📝 توضیحات: {report.description}</p>
                 )}

@@ -11,7 +11,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <header className="border-b border-neon/30 backdrop-blur-md bg-background/80 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center">
           <div className="flex items-center mb-3 sm:mb-0">
-            <h1 className="neon-text text-2xl mr-4">NeonTracker</h1>
+            <div className="flex items-center">
+              <img src="https://cdn.imgurl.ir/uploads/n479793_photo_--_--.jpg" alt="Logo" className="h-8 w-8 mr-2" />
+              <h1 className="neon-text text-2xl mr-4">سایت مدیریت زمان</h1>
+            </div>
             <p className="text-sm text-muted-foreground">by <a href="https://Ya3in.ir" target="_blank" rel="noopener noreferrer" className="neon-text text-xs">Ya3in.ir</a></p>
           </div>
           
