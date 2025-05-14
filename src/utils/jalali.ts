@@ -11,6 +11,7 @@ export function formatJalali(date: Date): string {
 
 // Get current jalali date
 export function getCurrentJalaliDate(): string {
+  // Get the actual current date from system time
   return dayjs().calendar('jalali').locale('fa').format('YYYY/MM/DD');
 }
 
