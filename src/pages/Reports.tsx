@@ -23,16 +23,36 @@ const Reports: React.FC = () => {
   // Save reports to localStorage when they change
   useEffect(() => {
     if (accessCode) {
+      // When user adds or edits a report, save it to their personal storage first
+      const personalStorage = localStorage.getItem('personal_reports') || '[]';
+      let personalReports = JSON.parse(personalStorage);
+      
+      // Update personal reports
+      personalReports = [...reports];
+      localStorage.setItem('personal_reports', JSON.stringify(personalReports));
+      
+      // Also update the shared code storage
       localStorage.setItem(`reports_${accessCode}`, JSON.stringify(reports));
     }
   }, [reports, accessCode]);
   
   const loadData = () => {
+    // Always load personal reports first if they exist
+    const personalStorage = localStorage.getItem('personal_reports');
+    if (personalStorage) {
+      try {
+        setReports(JSON.parse(personalStorage));
+      } catch (error) {
+        console.error('Error parsing personal reports:', error);
+      }
+    }
+    
     // Check for access code in localStorage
     const savedAccessCode = localStorage.getItem('currentAccessCode');
     if (savedAccessCode) {
       setAccessCode(savedAccessCode);
       
+      // If accessing with a shared code, load those reports instead
       const savedReports = localStorage.getItem(`reports_${savedAccessCode}`);
       if (savedReports) {
         try {
@@ -92,18 +112,37 @@ const Reports: React.FC = () => {
     // Save current code to localStorage
     localStorage.setItem('currentAccessCode', code);
     
-    // Load reports for this code
-    const savedReports = localStorage.getItem(`reports_${code}`);
-    if (savedReports) {
+    // Check if this is a shared code or personal code
+    const personalStorage = localStorage.getItem('personal_reports');
+    const sharedStorage = localStorage.getItem(`reports_${code}`);
+    
+    if (sharedStorage) {
+      // If shared code exists, load those reports
       try {
-        setReports(JSON.parse(savedReports));
+        setReports(JSON.parse(sharedStorage));
         toast.success(isPrivate ? 'دسترسی خصوصی برقرار شد' : 'دسترسی عمومی برقرار شد');
       } catch (error) {
-        console.error('Error parsing saved reports:', error);
+        console.error('Error parsing shared reports:', error);
         setReports([]);
       }
     } else {
-      setReports([]);
+      // If this is a new code, create it with current reports or empty array
+      if (personalStorage && code === localStorage.getItem('privateAccessCode')) {
+        // If personal reports exist and this is the private code, use those
+        try {
+          const personalReports = JSON.parse(personalStorage);
+          setReports(personalReports);
+          localStorage.setItem(`reports_${code}`, JSON.stringify(personalReports));
+        } catch (error) {
+          console.error('Error parsing personal reports:', error);
+          setReports([]);
+          localStorage.setItem(`reports_${code}`, '[]');
+        }
+      } else {
+        // For new codes or public codes, start with empty array
+        setReports([]);
+        localStorage.setItem(`reports_${code}`, '[]');
+      }
       toast.info('کد جدید ایجاد شد، می‌توانید گزارش‌های خود را ثبت کنید');
     }
   };
