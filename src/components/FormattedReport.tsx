@@ -1,17 +1,24 @@
 
 import React from 'react';
 import { Report } from './ReportForm';
-import { ClipboardCopy, Edit } from 'lucide-react';
+import { ClipboardCopy, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FormattedReportProps {
   reports: Report[];
   date: string;
   onEditReport?: (report: Report) => void;
+  onDeleteReport?: (reportId: string) => void;
   isAccordion?: boolean;
 }
 
-const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEditReport, isAccordion = false }) => {
+const FormattedReport: React.FC<FormattedReportProps> = ({ 
+  reports, 
+  date, 
+  onEditReport, 
+  onDeleteReport,
+  isAccordion = false 
+}) => {
   // Convert 24-hour format to Persian time notation (صبح/بعدازظهر)
   const toPersianTimeFormat = (time24: string): string => {
     const [hours, minutes] = time24.split(':').map(Number);
@@ -68,27 +75,96 @@ const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEdit
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
+  // Get Persian day name for a date
+  const getPersianDayName = (dateStr: string): string => {
+    // Parse the date string (assumes format is YYYY/MM/DD)
+    const [year, month, day] = dateStr.split('/').map(Number);
+    
+    // JavaScript months are 0-indexed
+    const date = new Date(year, month - 1, day);
+    
+    // Get day of week (0-6, where 0 is Sunday)
+    const dayOfWeek = date.getDay();
+    
+    // Persian day names
+    const persianDays = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+    
+    return persianDays[dayOfWeek];
+  };
+
   const totalTime = calculateTotalTime(reports);
+  const dayName = getPersianDayName(date);
   
-  // Mock previous day comparison (in a real app, this would use actual previous day data)
-  const previousDayTime = "01:30"; // Mock data
-  const previousDayMinutes = 
-    parseInt(previousDayTime.split(':')[0]) * 60 + 
-    parseInt(previousDayTime.split(':')[1]);
+  // Get yesterday's date
+  const getYesterdayDate = (dateStr: string): string | null => {
+    try {
+      // Parse the date string (assumes format is YYYY/MM/DD)
+      const [year, month, day] = dateStr.split('/').map(Number);
+      
+      // JavaScript months are 0-indexed
+      const date = new Date(year, month - 1, day);
+      
+      // Subtract one day
+      date.setDate(date.getDate() - 1);
+      
+      // Format back to YYYY/MM/DD
+      const yesterdayYear = date.getFullYear();
+      const yesterdayMonth = (date.getMonth() + 1).toString().padStart(2, '0');
+      const yesterdayDay = date.getDate().toString().padStart(2, '0');
+      
+      return `${yesterdayYear}/${yesterdayMonth}/${yesterdayDay}`;
+    } catch (error) {
+      console.error('Error calculating yesterday date:', error);
+      return null;
+    }
+  };
+  
+  // Get yesterday's total study time (from localStorage)
+  const getYesterdayTotalTime = (): string => {
+    try {
+      const yesterdayDate = getYesterdayDate(date);
+      if (!yesterdayDate) return "00:00";
+      
+      // Get the current access code
+      const currentCode = localStorage.getItem('currentAccessCode');
+      if (!currentCode) return "00:00";
+      
+      // Try to get reports for the current code
+      const savedReports = localStorage.getItem(`reports_${currentCode}`);
+      if (!savedReports) return "00:00";
+      
+      // Parse reports and filter by yesterday's date
+      const allReports: Report[] = JSON.parse(savedReports);
+      const yesterdayReports = allReports.filter(r => r.date === yesterdayDate);
+      
+      if (yesterdayReports.length === 0) return "00:00";
+      
+      // Calculate total time for yesterday's reports
+      return calculateTotalTime(yesterdayReports);
+    } catch (error) {
+      console.error('Error calculating yesterday total time:', error);
+      return "00:00";
+    }
+  };
+  
+  // Compare with yesterday's study time
+  const yesterdayTime = getYesterdayTotalTime();
+  const yesterdayMinutes = 
+    parseInt(yesterdayTime.split(':')[0]) * 60 + 
+    parseInt(yesterdayTime.split(':')[1]);
   
   const totalMinutes = 
     parseInt(totalTime.split(':')[0]) * 60 + 
     parseInt(totalTime.split(':')[1]);
   
-  const timeDifference = totalMinutes - previousDayMinutes;
-  const percentageDiff = Math.round((timeDifference / previousDayMinutes) * 100 * 10) / 10;
-  
-  // Use numeric format for the date
-  const formattedDate = date;
+  const timeDifference = totalMinutes - yesterdayMinutes;
+  const percentageDiff = yesterdayMinutes > 0 
+    ? Math.round((timeDifference / yesterdayMinutes) * 100 * 10) / 10
+    : 100; // If yesterday was 0, then it's 100% increase
   
   // Function to copy formatted report to clipboard
   const copyToClipboard = () => {
-    let formattedText = `📊 جمع ساعات مطالعه شما در تاریخ ${formattedDate}\n\n`;
+    let formattedText = `📊 جمع ساعات مطالعه شما در تاریخ ${date} (${dayName})\n\n`;
     formattedText += `🕒 مجموع ساعات: ${totalTime}\n\n`;
     formattedText += `📋 گزارش مطالعات:\n\n`;
     
@@ -134,7 +210,7 @@ const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEdit
     return (
       <div className="pb-4">
         <div className="flex justify-between items-start mb-4">
-          <h3 className="neon-text text-xl">📊 جمع ساعات مطالعه شما در تاریخ {formattedDate}</h3>
+          <h3 className="neon-text text-xl">📊 جمع ساعات مطالعه شما در تاریخ {date} ({dayName})</h3>
           <div className="flex gap-2">
             <button 
               onClick={copyToClipboard}
@@ -158,15 +234,26 @@ const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEdit
                   <h5 className="font-bold text-neon">
                     {index + 1}. {report.courseName}
                   </h5>
-                  {onEditReport && (
-                    <button 
-                      onClick={() => onEditReport(report)}
-                      className="p-1 rounded-full bg-background/40 hover:bg-background/60 transition-colors"
-                      title="ویرایش گزارش"
-                    >
-                      <Edit className="h-4 w-4 text-neon" />
-                    </button>
-                  )}
+                  <div className="flex space-x-1 space-x-reverse">
+                    {onEditReport && (
+                      <button 
+                        onClick={() => onEditReport(report)}
+                        className="p-1 rounded-full bg-background/40 hover:bg-background/60 transition-colors"
+                        title="ویرایش گزارش"
+                      >
+                        <Edit className="h-4 w-4 text-neon" />
+                      </button>
+                    )}
+                    {onDeleteReport && (
+                      <button 
+                        onClick={() => onDeleteReport(report.id)}
+                        className="p-1 rounded-full bg-background/40 hover:bg-background/60 transition-colors"
+                        title="حذف گزارش"
+                      >
+                        <Trash2 className="h-4 w-4 text-rose-500" />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <p className="mr-5">⏱ زمان: {persianStartTime} تا {persianEndTime} ({timeDiff})</p>
                 {report.description && (
@@ -208,7 +295,7 @@ const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEdit
   return (
     <div className="neon-card p-6 text-right" dir="rtl">
       <div className="flex justify-between items-start mb-4">
-        <h3 className="neon-text text-xl">📊 جمع ساعات مطالعه شما در تاریخ {formattedDate}</h3>
+        <h3 className="neon-text text-xl">📊 جمع ساعات مطالعه شما در تاریخ {date} ({dayName})</h3>
         <div className="flex gap-2">
           <button 
             onClick={copyToClipboard}
@@ -238,15 +325,26 @@ const FormattedReport: React.FC<FormattedReportProps> = ({ reports, date, onEdit
                   <h5 className="font-bold text-neon">
                     {index + 1}. {report.courseName}
                   </h5>
-                  {onEditReport && (
-                    <button 
-                      onClick={() => onEditReport(report)}
-                      className="p-1 rounded-full bg-background/40 hover:bg-background/60 transition-colors"
-                      title="ویرایش گزارش"
-                    >
-                      <Edit className="h-4 w-4 text-neon" />
-                    </button>
-                  )}
+                  <div className="flex space-x-1 space-x-reverse">
+                    {onEditReport && (
+                      <button 
+                        onClick={() => onEditReport(report)}
+                        className="p-1 rounded-full bg-background/40 hover:bg-background/60 transition-colors"
+                        title="ویرایش گزارش"
+                      >
+                        <Edit className="h-4 w-4 text-neon" />
+                      </button>
+                    )}
+                    {onDeleteReport && (
+                      <button 
+                        onClick={() => onDeleteReport(report.id)}
+                        className="p-1 rounded-full bg-background/40 hover:bg-background/60 transition-colors"
+                        title="حذف گزارش"
+                      >
+                        <Trash2 className="h-4 w-4 text-rose-500" />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <p className="mr-5">⏱ زمان: {persianStartTime} تا {persianEndTime} ({timeDiff})</p>
                 {report.description && (

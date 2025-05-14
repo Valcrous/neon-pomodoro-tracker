@@ -1,10 +1,22 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 
 // Timer states
 type TimerState = 'stopped' | 'running' | 'paused';
 type TimerMode = 'work' | 'shortBreak' | 'longBreak';
+
+// Sound URLs
+const SOUND_WORK_COMPLETE = 'https://preview--neon-pomodoro-tracker.lovable.app/';
+const SOUND_SHORT_BREAK_COMPLETE = 'https://cdn.imgurl.ir/uploads/l104072_Flute_Ringtone_Download_Tum_Hi_Aana_Ringtone.mp3';
+const SOUND_LONG_BREAK_COMPLETE = 'https://cdn.imgurl.ir/uploads/z481513_Mobile_Ringtone_-_Number_2_320.mp3';
+
+// Get Persian day of week
+const getPersianDayOfWeek = (): string => {
+  const days = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+  return days[new Date().getDay()];
+};
 
 const PomodoroTimer: React.FC = () => {
   // Timer settings
@@ -19,17 +31,101 @@ const PomodoroTimer: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(workDuration * 60);
   const [completedCycles, setCompletedCycles] = useState(0);
 
-  // Refs for timer
-  const timerRef = useRef<number | null>(null);
+  // Sound state
+  const [isMuted, setIsMuted] = useState(false);
+  const [isPlayingSound, setIsPlayingSound] = useState(false);
+  
+  // Day of week
+  const [currentDay, setCurrentDay] = useState(getPersianDayOfWeek());
 
-  // Cancel timer on unmount
+  // Refs for timer and audio
+  const timerRef = useRef<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize from localStorage on component mount
   useEffect(() => {
+    const savedSettings = localStorage.getItem('pomodoroSettings');
+    if (savedSettings) {
+      try {
+        const settings = JSON.parse(savedSettings);
+        setWorkDuration(settings.workDuration);
+        setShortBreakDuration(settings.shortBreakDuration);
+        setLongBreakDuration(settings.longBreakDuration);
+        setCyclesBeforeLongBreak(settings.cyclesBeforeLongBreak);
+      } catch (error) {
+        console.error('Error parsing saved settings:', error);
+      }
+    }
+
+    const savedState = localStorage.getItem('pomodoroState');
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState);
+        setTimerMode(state.timerMode);
+        setTimeLeft(state.timeLeft);
+        setCompletedCycles(state.completedCycles);
+        
+        // Only restore running state if the page was recently closed (within the last minute)
+        const lastUpdateTime = new Date(state.lastUpdateTime);
+        const now = new Date();
+        const diffInSeconds = (now.getTime() - lastUpdateTime.getTime()) / 1000;
+        
+        if (diffInSeconds < 60 && state.timerState === 'running') {
+          setTimerState('running');
+        }
+      } catch (error) {
+        console.error('Error parsing saved state:', error);
+      }
+    }
+
+    // Set up audio element
+    audioRef.current = new Audio();
+    
+    // Update current day
+    setCurrentDay(getPersianDayOfWeek());
+    
+    // Clean up
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
     };
   }, []);
+
+  // Save settings to localStorage when they change
+  useEffect(() => {
+    const settings = {
+      workDuration,
+      shortBreakDuration,
+      longBreakDuration,
+      cyclesBeforeLongBreak
+    };
+    
+    localStorage.setItem('pomodoroSettings', JSON.stringify(settings));
+  }, [workDuration, shortBreakDuration, longBreakDuration, cyclesBeforeLongBreak]);
+
+  // Save state to localStorage when it changes
+  useEffect(() => {
+    const state = {
+      timerState,
+      timerMode,
+      timeLeft,
+      completedCycles,
+      lastUpdateTime: new Date().toISOString()
+    };
+    
+    localStorage.setItem('pomodoroState', JSON.stringify(state));
+  }, [timerState, timerMode, timeLeft, completedCycles]);
+
+  // Start timer after mounting if it was running
+  useEffect(() => {
+    if (timerState === 'running' && !timerRef.current) {
+      startTimerInterval();
+    }
+  }, [timerState]);
 
   // Update timeLeft when duration settings change and timer is stopped
   useEffect(() => {
@@ -44,17 +140,67 @@ const PomodoroTimer: React.FC = () => {
     }
   }, [workDuration, shortBreakDuration, longBreakDuration, timerMode, timerState]);
 
-  // Timer logic
-  const startTimer = () => {
-    if (timerState === 'running') return;
+  // Play sound when timer completes
+  const playSound = () => {
+    if (isMuted || !audioRef.current) return;
     
-    setTimerState('running');
+    let soundUrl;
+    if (timerMode === 'work') {
+      soundUrl = SOUND_WORK_COMPLETE;
+    } else if (timerMode === 'shortBreak') {
+      soundUrl = SOUND_SHORT_BREAK_COMPLETE;
+    } else {
+      soundUrl = SOUND_LONG_BREAK_COMPLETE;
+    }
     
+    try {
+      audioRef.current.src = soundUrl;
+      audioRef.current.play()
+        .then(() => {
+          setIsPlayingSound(true);
+        })
+        .catch((error) => {
+          console.error("Error playing sound:", error);
+        });
+      
+      // Stop the sound after 5 seconds
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          setIsPlayingSound(false);
+        }
+      }, 5000);
+    } catch (error) {
+      console.error("Error playing notification sound:", error);
+    }
+  };
+
+  const stopSound = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsPlayingSound(false);
+    }
+  };
+
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+    if (isPlayingSound) {
+      stopSound();
+    }
+  };
+
+  // Timer interval setup
+  const startTimerInterval = () => {
     timerRef.current = window.setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           // Timer complete
           clearInterval(timerRef.current!);
+          
+          // Play notification sound
+          playSound();
           
           // Show notification
           const nextMode = getNextMode();
@@ -74,9 +220,18 @@ const PomodoroTimer: React.FC = () => {
     }, 1000);
   };
 
+  // Timer logic
+  const startTimer = () => {
+    if (timerState === 'running') return;
+    
+    setTimerState('running');
+    startTimerInterval();
+  };
+
   const pauseTimer = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
+      timerRef.current = null;
     }
     setTimerState('paused');
   };
@@ -84,6 +239,7 @@ const PomodoroTimer: React.FC = () => {
   const resetTimer = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
+      timerRef.current = null;
     }
     setTimerState('stopped');
     setTimeLeft(
@@ -93,6 +249,12 @@ const PomodoroTimer: React.FC = () => {
         ? shortBreakDuration * 60
         : longBreakDuration * 60
     );
+  };
+
+  // Reset cycles manually
+  const resetCycles = () => {
+    setCompletedCycles(0);
+    toast.info('سیکل‌های پومودورو ریست شدند');
   };
 
   const getNextMode = (): TimerMode => {
@@ -150,6 +312,7 @@ const PomodoroTimer: React.FC = () => {
     
     if (timerRef.current) {
       clearInterval(timerRef.current);
+      timerRef.current = null;
     }
     
     setTimerMode(newMode);
@@ -180,7 +343,10 @@ const PomodoroTimer: React.FC = () => {
   return (
     <div className="max-w-xl mx-auto" dir="rtl">
       <div className="neon-card">
-        <h2 className="neon-text text-2xl mb-8 text-center">تایمر پومودورو</h2>
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="neon-text text-2xl text-center">تایمر پومودورو</h2>
+          <span className="text-neon text-lg">{currentDay}</span>
+        </div>
         
         {/* Timer Mode Switcher */}
         <div className="flex justify-center mb-8">
@@ -249,6 +415,11 @@ const PomodoroTimer: React.FC = () => {
               />
             </svg>
             
+            {/* Progress Percentage */}
+            <div className="absolute top-3 right-3 bg-background/60 rounded-md px-2 py-1">
+              <span className="text-sm font-mono text-neon">{Math.round(progress)}%</span>
+            </div>
+            
             {/* Timer Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="neon-text text-5xl font-mono">{formatTime(timeLeft)}</span>
@@ -263,41 +434,78 @@ const PomodoroTimer: React.FC = () => {
           </div>
           
           {/* Cycle Counter */}
-          <div className="text-sm text-muted-foreground">
-            <span>سیکل {completedCycles} از {cyclesBeforeLongBreak}</span>
+          <div className="flex items-center space-x-2 space-x-reverse">
+            <span className="text-sm text-muted-foreground">
+              سیکل {completedCycles} از {cyclesBeforeLongBreak}
+            </span>
+            <button 
+              onClick={resetCycles}
+              className="p-1 rounded-full hover:bg-background/40 transition-colors"
+              title="ریست سیکل‌ها"
+            >
+              <RotateCcw className="h-4 w-4 text-neon" />
+            </button>
           </div>
         </div>
         
         {/* Timer Controls */}
-        <div className="flex justify-center space-x-3 space-x-reverse">
+        <div className="flex justify-center items-center space-x-3 space-x-reverse">
           {timerState === 'running' ? (
             <button 
               onClick={pauseTimer}
-              className="neon-button"
+              className="neon-button flex items-center space-x-2 space-x-reverse"
             >
-              توقف
+              <Pause className="h-5 w-5" />
+              <span>توقف</span>
             </button>
           ) : timerState === 'paused' ? (
             <>
               <button 
                 onClick={startTimer}
-                className="neon-button"
+                className="neon-button flex items-center space-x-2 space-x-reverse"
               >
-                ادامه
+                <Play className="h-5 w-5" />
+                <span>ادامه</span>
               </button>
               <button 
                 onClick={resetTimer}
-                className="neon-button"
+                className="neon-button flex items-center space-x-2 space-x-reverse"
               >
-                ریست
+                <RotateCcw className="h-5 w-5" />
+                <span>ریست</span>
               </button>
             </>
           ) : (
             <button 
               onClick={startTimer}
-              className="neon-button"
+              className="neon-button flex items-center space-x-2 space-x-reverse"
             >
-              شروع
+              <Play className="h-5 w-5" />
+              <span>شروع</span>
+            </button>
+          )}
+          
+          {/* Sound toggle button */}
+          <button
+            onClick={toggleMute}
+            className="p-2 rounded-full hover:bg-background/40 transition-colors"
+            title={isMuted ? "فعال کردن صدا" : "قطع صدا"}
+          >
+            {isMuted ? (
+              <VolumeX className="h-5 w-5 text-neon" />
+            ) : (
+              <Volume2 className="h-5 w-5 text-neon" />
+            )}
+          </button>
+          
+          {/* Stop sound button - only show when sound is playing */}
+          {isPlayingSound && !isMuted && (
+            <button
+              onClick={stopSound}
+              className="neon-button"
+              title="قطع صدای هشدار"
+            >
+              قطع صدا
             </button>
           )}
         </div>
@@ -319,7 +527,6 @@ const PomodoroTimer: React.FC = () => {
                 value={workDuration}
                 onChange={e => setWorkDuration(parseInt(e.target.value) || 25)}
                 className="neon-input w-full"
-                disabled={timerState !== 'stopped'}
               />
             </div>
             
@@ -335,7 +542,6 @@ const PomodoroTimer: React.FC = () => {
                 value={shortBreakDuration}
                 onChange={e => setShortBreakDuration(parseInt(e.target.value) || 5)}
                 className="neon-input w-full"
-                disabled={timerState !== 'stopped'}
               />
             </div>
             
@@ -351,7 +557,6 @@ const PomodoroTimer: React.FC = () => {
                 value={longBreakDuration}
                 onChange={e => setLongBreakDuration(parseInt(e.target.value) || 15)}
                 className="neon-input w-full"
-                disabled={timerState !== 'stopped'}
               />
             </div>
             
@@ -367,7 +572,6 @@ const PomodoroTimer: React.FC = () => {
                 value={cyclesBeforeLongBreak}
                 onChange={e => setCyclesBeforeLongBreak(parseInt(e.target.value) || 4)}
                 className="neon-input w-full"
-                disabled={timerState !== 'stopped'}
               />
             </div>
           </div>

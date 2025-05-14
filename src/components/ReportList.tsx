@@ -7,14 +7,25 @@ import FormattedReport from './FormattedReport';
 interface ReportListProps {
   reports: Report[];
   searchDate: string;
+  searchCourse: string;
   onEditReport?: (report: Report) => void;
+  onDeleteReport?: (reportId: string) => void;
 }
 
-const ReportList: React.FC<ReportListProps> = ({ reports, searchDate, onEditReport }) => {
-  // Filter reports if search date is provided
-  const filteredReports = searchDate
-    ? reports.filter(report => report.date.includes(searchDate))
-    : reports;
+const ReportList: React.FC<ReportListProps> = ({ 
+  reports, 
+  searchDate, 
+  searchCourse,
+  onEditReport, 
+  onDeleteReport 
+}) => {
+  // Filter reports based on search criteria
+  const filteredReports = reports.filter(report => {
+    const matchesDate = !searchDate || report.date.includes(searchDate);
+    const matchesCourse = !searchCourse || 
+      report.courseName.toLowerCase().includes(searchCourse.toLowerCase());
+    return matchesDate && matchesCourse;
+  });
 
   // Sort by date (newest first) and then by start time
   const sortedReports = [...filteredReports].sort((a, b) => {
@@ -37,8 +48,8 @@ const ReportList: React.FC<ReportListProps> = ({ reports, searchDate, onEditRepo
     return (
       <div className="text-center py-10">
         <p className="text-muted-foreground">
-          {searchDate 
-            ? 'هیچ گزارشی با این تاریخ یافت نشد' 
+          {searchDate || searchCourse
+            ? 'هیچ گزارشی با این مشخصات یافت نشد' 
             : 'هیچ گزارشی ثبت نشده است'}
         </p>
       </div>
@@ -65,19 +76,40 @@ const ReportList: React.FC<ReportListProps> = ({ reports, searchDate, onEditRepo
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
+  // Get Persian day name for a date
+  const getPersianDayName = (dateStr: string): string => {
+    // Parse the date string (assumes format is YYYY/MM/DD)
+    const [year, month, day] = dateStr.split('/').map(Number);
+    
+    // JavaScript months are 0-indexed
+    const date = new Date(year, month - 1, day);
+    
+    // Get day of week (0-6, where 0 is Sunday)
+    const dayOfWeek = date.getDay();
+    
+    // Persian day names
+    const persianDays = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+    
+    return persianDays[dayOfWeek];
+  };
+
   return (
     <div className="space-y-4" dir="rtl">
       <Accordion type="single" collapsible className="w-full">
         {Object.entries(groupedReports).map(([date, dateReports]) => {
           const totalTime = calculateTotalTime(dateReports);
+          const dayName = getPersianDayName(date);
           
           return (
             <AccordionItem key={date} value={date} className="neon-card mb-4 overflow-hidden border-0">
               <AccordionTrigger className="px-6 py-4 hover:no-underline">
                 <div className="flex justify-between items-center w-full">
-                  <h3 className="neon-text text-xl text-right">
-                    تاریخ: {date}
-                  </h3>
+                  <div className="flex items-center space-x-3 space-x-reverse">
+                    <h3 className="neon-text text-xl text-right">
+                      {date}
+                    </h3>
+                    <span className="text-muted-foreground">({dayName})</span>
+                  </div>
                   <span className="text-neon text-lg">
                     مجموع: {totalTime}
                   </span>
@@ -88,6 +120,7 @@ const ReportList: React.FC<ReportListProps> = ({ reports, searchDate, onEditRepo
                   reports={dateReports} 
                   date={date} 
                   onEditReport={onEditReport}
+                  onDeleteReport={onDeleteReport}
                   isAccordion={true}
                 />
               </AccordionContent>
