@@ -117,4 +117,3 @@ const ReportList: React.FC<ReportListProps> = ({
 };
 
 export default ReportList;
-

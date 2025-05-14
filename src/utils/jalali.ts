@@ -17,7 +17,7 @@ export function getCurrentJalaliDate(): string {
 // Get Persian day name for a date string (YYYY/MM/DD)
 export function getPersianDayName(dateStr: string): string {
   // Convert jalali date string to gregorian date
-  const jalaliDate = dayjs(dateStr, { jalali: true });
+  const jalaliDate = dayjs(dateStr).calendar('jalali');
   
   // Get day of week (0-6, where 0 is Sunday)
   const dayOfWeek = jalaliDate.day();
@@ -27,4 +27,3 @@ export function getPersianDayName(dateStr: string): string {
   
   return persianDays[dayOfWeek];
 }
-

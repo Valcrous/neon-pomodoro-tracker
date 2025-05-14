@@ -1,11 +1,13 @@
+
 import React from 'react';
 import { Report } from './ReportForm';
 import { ClipboardCopy, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPersianDayName } from '@/utils/jalali';
 import dayjs from 'dayjs';
-import 'dayjs/plugin/jalali';
-dayjs.extend(dayjs.jalali);
+import jalaliday from 'jalaliday';
+
+dayjs.extend(jalaliday);
 
 interface FormattedReportProps {
   reports: Report[];
@@ -85,7 +87,7 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
   const getYesterdayDate = (dateStr: string): string | null => {
     try {
       // Use dayjs with jalali calendar to get yesterday's date
-      const jalaliDate = dayjs(dateStr, { jalali: true });
+      const jalaliDate = dayjs(dateStr).calendar('jalali');
       const yesterday = jalaliDate.subtract(1, 'day');
       return yesterday.format('YYYY/MM/DD');
     } catch (error) {
