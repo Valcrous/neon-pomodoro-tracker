@@ -1,8 +1,11 @@
-
 import React from 'react';
 import { Report } from './ReportForm';
 import { ClipboardCopy, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getPersianDayName } from '@/utils/jalali';
+import dayjs from 'dayjs';
+import 'dayjs/plugin/jalali';
+dayjs.extend(dayjs.jalali);
 
 interface FormattedReportProps {
   reports: Report[];
@@ -75,44 +78,16 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
-  // Get Persian day name for a date
-  const getPersianDayName = (dateStr: string): string => {
-    // Parse the date string (assumes format is YYYY/MM/DD)
-    const [year, month, day] = dateStr.split('/').map(Number);
-    
-    // JavaScript months are 0-indexed
-    const date = new Date(year, month - 1, day);
-    
-    // Get day of week (0-6, where 0 is Sunday)
-    const dayOfWeek = date.getDay();
-    
-    // Persian day names
-    const persianDays = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
-    
-    return persianDays[dayOfWeek];
-  };
-
   const totalTime = calculateTotalTime(reports);
   const dayName = getPersianDayName(date);
   
   // Get yesterday's date
   const getYesterdayDate = (dateStr: string): string | null => {
     try {
-      // Parse the date string (assumes format is YYYY/MM/DD)
-      const [year, month, day] = dateStr.split('/').map(Number);
-      
-      // JavaScript months are 0-indexed
-      const date = new Date(year, month - 1, day);
-      
-      // Subtract one day
-      date.setDate(date.getDate() - 1);
-      
-      // Format back to YYYY/MM/DD
-      const yesterdayYear = date.getFullYear();
-      const yesterdayMonth = (date.getMonth() + 1).toString().padStart(2, '0');
-      const yesterdayDay = date.getDate().toString().padStart(2, '0');
-      
-      return `${yesterdayYear}/${yesterdayMonth}/${yesterdayDay}`;
+      // Use dayjs with jalali calendar to get yesterday's date
+      const jalaliDate = dayjs(dateStr, { jalali: true });
+      const yesterday = jalaliDate.subtract(1, 'day');
+      return yesterday.format('YYYY/MM/DD');
     } catch (error) {
       console.error('Error calculating yesterday date:', error);
       return null;

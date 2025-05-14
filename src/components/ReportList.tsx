@@ -3,6 +3,7 @@ import React from 'react';
 import { Report } from './ReportForm';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import FormattedReport from './FormattedReport';
+import { getPersianDayName } from '@/utils/jalali';
 
 interface ReportListProps {
   reports: Report[];
@@ -76,23 +77,6 @@ const ReportList: React.FC<ReportListProps> = ({
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
-  // Get Persian day name for a date
-  const getPersianDayName = (dateStr: string): string => {
-    // Parse the date string (assumes format is YYYY/MM/DD)
-    const [year, month, day] = dateStr.split('/').map(Number);
-    
-    // JavaScript months are 0-indexed
-    const date = new Date(year, month - 1, day);
-    
-    // Get day of week (0-6, where 0 is Sunday)
-    const dayOfWeek = date.getDay();
-    
-    // Persian day names
-    const persianDays = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
-    
-    return persianDays[dayOfWeek];
-  };
-
   return (
     <div className="space-y-4" dir="rtl">
       <Accordion type="single" collapsible className="w-full">
@@ -133,3 +117,4 @@ const ReportList: React.FC<ReportListProps> = ({
 };
 
 export default ReportList;
+
