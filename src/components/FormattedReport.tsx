@@ -1,12 +1,9 @@
+
 import React from 'react';
 import { Report } from './ReportForm';
 import { ClipboardCopy, Edit, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { getPersianDayName, getYesterdayJalaliDate, getCurrentJalaliDate } from '@/utils/jalali';
-import dayjs from 'dayjs';
-import jalaliday from 'jalaliday';
-
-dayjs.extend(jalaliday);
+import { toast } from '@/components/ui/use-toast';
+import { getPersianDayName, getYesterdayJalaliDate } from '@/utils/jalali';
 
 interface FormattedReportProps {
   reports: Report[];
@@ -23,7 +20,7 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
   onDeleteReport,
   isAccordion = false 
 }) => {
-  // Convert 24-hour format to Persian time notation (صبح/بعدازظهر)
+  // تبدیل فرمت 24 ساعته به نماد زمانی فارسی (صبح/بعدازظهر)
   const toPersianTimeFormat = (time24: string): string => {
     const [hours, minutes] = time24.split(':').map(Number);
     let persianHours = hours;
@@ -36,7 +33,7 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
       }
     }
     
-    // Convert 0 hour to 12 for midnight
+    // تبدیل ساعت 0 به 12 برای نیمه‌شب
     if (persianHours === 0) {
       persianHours = 12;
     }
@@ -44,7 +41,7 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
     return `${persianHours}:${minutes.toString().padStart(2, '0')} ${suffix}`;
   };
 
-  // Calculate total study time
+  // محاسبه کل زمان مطالعه
   const calculateTotalTime = (reports: Report[]): string => {
     let totalMinutes = 0;
     
@@ -64,7 +61,7 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
   
-  // Calculate time difference between start and end time
+  // محاسبه اختلاف زمان بین زمان شروع و پایان
   const calculateTimeDifference = (startTime: string, endTime: string): string => {
     const startParts = startTime.split(':');
     const endParts = endTime.split(':');
@@ -82,45 +79,46 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
   const totalTime = calculateTotalTime(reports);
   const dayName = getPersianDayName(date);
   
-  // Get yesterday's date using the utility function
+  // بدست آوردن تاریخ دیروز با استفاده از تابع کمکی
   const getYesterdayDate = (dateStr: string): string | null => {
     try {
       return getYesterdayJalaliDate(dateStr);
     } catch (error) {
-      console.error('Error calculating yesterday date:', error);
+      console.error('خطا در محاسبه تاریخ دیروز:', error);
       return null;
     }
   };
   
-  // Get yesterday's total study time (from localStorage)
+  // بدست آوردن کل زمان مطالعه دیروز (از localStorage)
   const getYesterdayTotalTime = (): string => {
     try {
       const yesterdayDate = getYesterdayDate(date);
       if (!yesterdayDate) return "00:00";
       
-      // Get the current access code
+      // بدست آوردن کد دسترسی فعلی
       const currentCode = localStorage.getItem('currentAccessCode');
       if (!currentCode) return "00:00";
       
-      // Try to get reports for the current code
-      const savedReports = localStorage.getItem(`reports_${currentCode}`);
+      // تلاش برای بدست آوردن گزارش‌ها برای کد فعلی
+      const storageKey = `reports_${currentCode}`;
+      const savedReports = localStorage.getItem(storageKey);
       if (!savedReports) return "00:00";
       
-      // Parse reports and filter by yesterday's date
+      // تجزیه گزارش‌ها و فیلتر کردن بر اساس تاریخ دیروز
       const allReports: Report[] = JSON.parse(savedReports);
       const yesterdayReports = allReports.filter(r => r.date === yesterdayDate);
       
       if (yesterdayReports.length === 0) return "00:00";
       
-      // Calculate total time for yesterday's reports
+      // محاسبه کل زمان برای گزارش‌های دیروز
       return calculateTotalTime(yesterdayReports);
     } catch (error) {
-      console.error('Error calculating yesterday total time:', error);
+      console.error('خطا در محاسبه کل زمان دیروز:', error);
       return "00:00";
     }
   };
   
-  // Compare with yesterday's study time
+  // مقایسه با زمان مطالعه دیروز
   const yesterdayTime = getYesterdayTotalTime();
   const yesterdayMinutes = 
     parseInt(yesterdayTime.split(':')[0]) * 60 + 
@@ -133,9 +131,9 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
   const timeDifference = totalMinutes - yesterdayMinutes;
   const percentageDiff = yesterdayMinutes > 0 
     ? Math.round((timeDifference / yesterdayMinutes) * 100 * 10) / 10
-    : 100; // If yesterday was 0, then it's 100% increase
+    : 100; // اگر دیروز 0 بود، پس افزایش 100% است
   
-  // Function to copy formatted report to clipboard
+  // تابع برای کپی کردن گزارش قالب‌بندی شده به کلیپ‌بورد
   const copyToClipboard = () => {
     let formattedText = `📊 جمع ساعات مطالعه شما در تاریخ ${date} (${dayName})\n\n`;
     formattedText += `🕒 مجموع ساعات: ${totalTime}\n\n`;
@@ -174,12 +172,18 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
     }
     
     navigator.clipboard.writeText(formattedText)
-      .then(() => toast.success('گزارش کپی شد'))
-      .catch(() => toast.error('خطا در کپی گزارش'));
+      .then(() => toast({
+        title: "گزارش کپی شد"
+      }))
+      .catch(() => toast({
+        title: "خطا در کپی گزارش",
+        variant: "destructive"
+      }));
   };
 
-  // If used inside accordion, render a more compact version
+  // اگر در آکاردئون استفاده شود، یک نسخه فشرده‌تر را نمایش دهید
   if (isAccordion) {
+    // ... کد موجود نسخه آکاردئون حفظ می‌شود
     return (
       <div className="pb-4">
         <div className="flex justify-between items-start mb-4">
@@ -264,7 +268,8 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
     );
   }
 
-  // Standard view (non-accordion)
+  // نمای استاندارد (غیرآکاردئون)
+  // ... کد موجود نسخه استاندارد حفظ می‌شود
   return (
     <div className="neon-card p-6 text-right" dir="rtl">
       <div className="flex justify-between items-start mb-4">

@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { formatJalali, getCurrentJalaliDate } from '@/utils/jalali';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/use-toast';
 
 interface ReportFormProps {
   onAddReport: (report: Report) => void;
   initialReport?: Report | null;
-  currentDate?: string; // Add prop to receive correct date
+  currentDate?: string;
 }
 
 export interface Report {
@@ -26,10 +26,10 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, cur
   const [showForm, setShowForm] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Use provided currentDate or fallback to getCurrentJalaliDate
+  // استفاده از تاریخ ارائه شده یا بازگشت به getCurrentJalaliDate
   const today = currentDate || getCurrentJalaliDate();
 
-  // Set form values when editing an existing report
+  // تنظیم مقادیر فرم هنگام ویرایش یک گزارش موجود
   useEffect(() => {
     if (initialReport) {
       setCourseName(initialReport.courseName);
@@ -54,13 +54,17 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, cur
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
+    // اعتبارسنجی
     if (!courseName || !startTime || !endTime) {
-      toast.error('لطفا تمامی فیلدهای اجباری را پر کنید');
+      toast({
+        title: "خطا",
+        description: "لطفا تمامی فیلدهای اجباری را پر کنید",
+        variant: "destructive"
+      });
       return;
     }
     
-    // Create report object
+    // ایجاد شیء گزارش
     const newReport: Report = {
       id: isEditing && initialReport ? initialReport.id : crypto.randomUUID(),
       date: isEditing && initialReport ? initialReport.date : today,
@@ -70,12 +74,12 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, cur
       description
     };
     
-    // Add or update report
+    // افزودن یا به‌روزرسانی گزارش
     onAddReport(newReport);
     
-    // Reset form or ask for another entry
+    // بازنشانی فرم یا درخواست ورودی دیگر
     if (!isEditing) {
-      // Ask if user wants to add another report
+      // سؤال اینکه آیا کاربر می‌خواهد گزارش دیگری ثبت کند
       const addAnother = window.confirm('آیا می‌خواهید گزارش دیگری برای امروز ثبت کنید؟');
       if (addAnother) {
         resetForm();

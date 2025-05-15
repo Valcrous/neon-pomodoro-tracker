@@ -8,7 +8,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(jalaliday);
 
-// Convert to Jalali date format
+// تبدیل به فرمت تاریخ جلالی
 export function formatJalali(date: Date): string {
   return dayjs(date)
     .tz("Asia/Tehran")
@@ -17,7 +17,7 @@ export function formatJalali(date: Date): string {
     .format("YYYY/MM/DD");
 }
 
-// Get current jalali date - fixed to show exact date without any offset
+// محاسبه تاریخ جلالی بدون هرگونه مشکل اختلاف ساعت
 export function getCurrentJalaliDate(): string {
   // ایجاد یک تاریخ امروز با منطقه زمانی تهران و کم کردن یک روز برای نمایش تاریخ صحیح
   const tehranTime = dayjs().tz("Asia/Tehran").subtract(1, 'day');
@@ -27,7 +27,7 @@ export function getCurrentJalaliDate(): string {
     .format("YYYY/MM/DD");
 }
 
-// Get Persian day name for a date string (YYYY/MM/DD)
+// محاسبه نام روز فارسی برای یک تاریخ رشته‌ای (YYYY/MM/DD)
 export function getPersianDayName(dateStr: string): string {
   try {
     const [year, month, day] = dateStr.split("/").map(Number);
@@ -40,23 +40,23 @@ export function getPersianDayName(dateStr: string): string {
     
     const dayOfWeek = jalaliDate.day(); // 0 = Sunday, 6 = Saturday
     
-    // Persian day names in correct order based on dayjs day() return value
+    // نام‌های روز فارسی در ترتیب صحیح بر اساس مقدار بازگشتی dayjs day()
     // Sunday (0) to Saturday (6)
     const persianDays = ["یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه"];
     
     return persianDays[dayOfWeek];
   } catch (error) {
-    console.error("Error calculating day name:", error);
+    console.error("خطا در محاسبه نام روز:", error);
     return "";
   }
 }
 
-// Get yesterday's jalali date from a given date
+// محاسبه تاریخ جلالی دیروز از تاریخ داده شده
 export function getYesterdayJalaliDate(dateStr: string): string {
   try {
     const [year, month, day] = dateStr.split("/").map(Number);
     
-    // Convert the given date to jalali dayjs object
+    // تبدیل تاریخ داده شده به شیء jalali dayjs
     const jalaliDate = dayjs()
       .tz("Asia/Tehran")
       .calendar("jalali")
@@ -64,13 +64,13 @@ export function getYesterdayJalaliDate(dateStr: string): string {
       .month(month - 1)
       .date(day);
     
-    // Subtract one day to get yesterday
+    // کم کردن یک روز برای بدست آوردن دیروز
     const yesterday = jalaliDate.subtract(1, "day");
     
-    // Format and return
+    // قالب‌بندی و بازگشت
     return yesterday.format("YYYY/MM/DD");
   } catch (error) {
-    console.error("Error calculating yesterday's date:", error);
+    console.error("خطا در محاسبه تاریخ دیروز:", error);
     return "";
   }
 }
