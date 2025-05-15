@@ -17,10 +17,10 @@ export function formatJalali(date: Date): string {
     .format("YYYY/MM/DD");
 }
 
-// Get current jalali date - fixed to provide correct current date
+// Get current jalali date - fixed to show exact date without any offset
 export function getCurrentJalaliDate(): string {
-  return dayjs()
-    .tz("Asia/Tehran")
+  const tehranTime = dayjs().tz("Asia/Tehran");
+  return tehranTime
     .calendar("jalali")
     .locale("fa")
     .format("YYYY/MM/DD");

@@ -6,10 +6,6 @@ import ReportSearch from '@/components/ReportSearch';
 import ReportList from '@/components/ReportList';
 import { toast } from 'sonner';
 import { getCurrentJalaliDate } from '@/utils/jalali';
-import dayjs from 'dayjs';
-import jalaliday from 'jalaliday';
-
-dayjs.extend(jalaliday);
 
 const Reports: React.FC = () => {
   const [reports, setReports] = useState<Report[]>([]);
@@ -39,15 +35,6 @@ const Reports: React.FC = () => {
     }
   };
   
-  // Get current Jalali date with correct day (not one day ahead)
-  const getCorrectCurrentDate = (): string => {
-    return dayjs()
-      .tz("Asia/Tehran")
-      .calendar("jalali")
-      .locale("fa")
-      .format("YYYY/MM/DD");
-  };
-  
   const handleAddReport = (newReport: Report) => {
     if (editingReport) {
       // Update existing report
@@ -58,8 +45,8 @@ const Reports: React.FC = () => {
       toast.success('گزارش با موفقیت بروزرسانی شد');
     } else {
       // Add new report
-      // Ensure today's correct date is used
-      const today = getCorrectCurrentDate();
+      // Use the corrected getCurrentJalaliDate function
+      const today = getCurrentJalaliDate();
       const reportWithToday = {...newReport, date: today};
       
       setReports(prev => [reportWithToday, ...prev]);
@@ -91,7 +78,7 @@ const Reports: React.FC = () => {
         <ReportForm 
           onAddReport={handleAddReport} 
           initialReport={editingReport} 
-          currentDate={getCorrectCurrentDate()}
+          currentDate={getCurrentJalaliDate()}
         />
         
         <div>

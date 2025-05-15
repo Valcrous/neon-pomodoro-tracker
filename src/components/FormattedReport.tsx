@@ -2,7 +2,7 @@ import React from 'react';
 import { Report } from './ReportForm';
 import { ClipboardCopy, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getPersianDayName, getYesterdayJalaliDate } from '@/utils/jalali';
+import { getPersianDayName, getYesterdayJalaliDate, getCurrentJalaliDate } from '@/utils/jalali';
 import dayjs from 'dayjs';
 import jalaliday from 'jalaliday';
 
@@ -82,7 +82,7 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
   const totalTime = calculateTotalTime(reports);
   const dayName = getPersianDayName(date);
   
-  // Get yesterday's date using the new utility function
+  // Get yesterday's date using the utility function
   const getYesterdayDate = (dateStr: string): string | null => {
     try {
       return getYesterdayJalaliDate(dateStr);
