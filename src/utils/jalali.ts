@@ -19,7 +19,8 @@ export function formatJalali(date: Date): string {
 
 // Get current jalali date - fixed to show exact date without any offset
 export function getCurrentJalaliDate(): string {
-  const tehranTime = dayjs().tz("Asia/Tehran");
+  // ایجاد یک تاریخ امروز با منطقه زمانی تهران و کم کردن یک روز برای نمایش تاریخ صحیح
+  const tehranTime = dayjs().tz("Asia/Tehran").subtract(1, 'day');
   return tehranTime
     .calendar("jalali")
     .locale("fa")
