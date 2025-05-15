@@ -49,3 +49,27 @@ export function getPersianDayName(dateStr: string): string {
     return "";
   }
 }
+
+// Get yesterday's jalali date from a given date
+export function getYesterdayJalaliDate(dateStr: string): string {
+  try {
+    const [year, month, day] = dateStr.split("/").map(Number);
+    
+    // Convert the given date to jalali dayjs object
+    const jalaliDate = dayjs()
+      .tz("Asia/Tehran")
+      .calendar("jalali")
+      .year(year)
+      .month(month - 1)
+      .date(day);
+    
+    // Subtract one day to get yesterday
+    const yesterday = jalaliDate.subtract(1, "day");
+    
+    // Format and return
+    return yesterday.format("YYYY/MM/DD");
+  } catch (error) {
+    console.error("Error calculating yesterday's date:", error);
+    return "";
+  }
+}

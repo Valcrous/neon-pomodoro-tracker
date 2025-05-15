@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Report } from './ReportForm';
 import { ClipboardCopy, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getPersianDayName } from '@/utils/jalali';
+import { getPersianDayName, getYesterdayJalaliDate } from '@/utils/jalali';
 import dayjs from 'dayjs';
 import jalaliday from 'jalaliday';
 
@@ -83,13 +82,10 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
   const totalTime = calculateTotalTime(reports);
   const dayName = getPersianDayName(date);
   
-  // Get yesterday's date
+  // Get yesterday's date using the new utility function
   const getYesterdayDate = (dateStr: string): string | null => {
     try {
-      // Use dayjs with jalali calendar to get yesterday's date
-      const jalaliDate = dayjs(dateStr).calendar('jalali');
-      const yesterday = jalaliDate.subtract(1, 'day');
-      return yesterday.format('YYYY/MM/DD');
+      return getYesterdayJalaliDate(dateStr);
     } catch (error) {
       console.error('Error calculating yesterday date:', error);
       return null;
