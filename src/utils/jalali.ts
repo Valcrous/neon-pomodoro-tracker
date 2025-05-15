@@ -1,38 +1,51 @@
 
 import dayjs from "dayjs";
 import jalaliday from "jalaliday";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
 dayjs.extend(jalaliday);
 
 // Convert to Jalali date format
 export function formatJalali(date: Date): string {
-  return dayjs(date).calendar('jalali').locale('fa').format('YYYY/MM/DD');
+  return dayjs(date)
+    .tz("Asia/Tehran")
+    .calendar("jalali")
+    .locale("fa")
+    .format("YYYY/MM/DD");
 }
 
 // Get current jalali date
 export function getCurrentJalaliDate(): string {
-  // Get the actual current date from system time
-  return dayjs().calendar('jalali').locale('fa').format('YYYY/MM/DD');
+  return dayjs()
+    .tz("Asia/Tehran")
+    .calendar("jalali")
+    .locale("fa")
+    .format("YYYY/MM/DD");
 }
 
 // Get Persian day name for a date string (YYYY/MM/DD)
 export function getPersianDayName(dateStr: string): string {
   try {
-    // Convert jalali date string to dayjs object with jalali calendar
-    const parts = dateStr.split('/').map(Number);
-    // Create a proper jalali date with the correct year, month, day
-    const jalaliDate = dayjs().calendar('jalali').year(parts[0]).month(parts[1] - 1).date(parts[2]);
+    const [year, month, day] = dateStr.split("/").map(Number);
+    const jalaliDate = dayjs()
+      .tz("Asia/Tehran")
+      .calendar("jalali")
+      .year(year)
+      .month(month - 1)
+      .date(day);
     
-    // Get day of week (0-6, where 0 is Sunday)
-    const dayOfWeek = jalaliDate.day();
+    const dayOfWeek = jalaliDate.day(); // 0 = Sunday, 6 = Saturday
     
     // Persian day names in correct order based on dayjs day() return value
     // Sunday (0) to Saturday (6)
-    const persianDays = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+    const persianDays = ["یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه"];
     
     return persianDays[dayOfWeek];
   } catch (error) {
-    console.error('Error calculating day name:', error);
-    return '';
+    console.error("Error calculating day name:", error);
+    return "";
   }
 }
