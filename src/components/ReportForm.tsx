@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 interface ReportFormProps {
   onAddReport: (report: Report) => void;
   initialReport?: Report | null;
+  currentDate?: string; // Add prop to receive correct date
 }
 
 export interface Report {
@@ -17,7 +18,7 @@ export interface Report {
   description: string;
 }
 
-const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport }) => {
+const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, currentDate }) => {
   const [courseName, setCourseName] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
@@ -25,7 +26,8 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport }) =
   const [showForm, setShowForm] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
-  const today = getCurrentJalaliDate();
+  // Use provided currentDate or fallback to getCurrentJalaliDate
+  const today = currentDate || getCurrentJalaliDate();
 
   // Set form values when editing an existing report
   useEffect(() => {

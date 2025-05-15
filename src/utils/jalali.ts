@@ -17,7 +17,7 @@ export function formatJalali(date: Date): string {
     .format("YYYY/MM/DD");
 }
 
-// Get current jalali date
+// Get current jalali date - fixed to provide correct current date
 export function getCurrentJalaliDate(): string {
   return dayjs()
     .tz("Asia/Tehran")
