@@ -7,6 +7,7 @@ interface ReportFormProps {
   onAddReport: (report: Report) => void;
   initialReport?: Report | null;
   currentDate?: string;
+  username: string | null;
 }
 
 export interface Report {
@@ -16,9 +17,10 @@ export interface Report {
   startTime: string;
   endTime: string;
   description: string;
+  username: string;
 }
 
-const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, currentDate }) => {
+const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, currentDate, username }) => {
   const [courseName, setCourseName] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
@@ -54,6 +56,15 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, cur
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!username) {
+      toast({
+        title: "خطا",
+        description: "ابتدا باید یک حساب کاربری ایجاد کنید",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // اعتبارسنجی
     if (!courseName || !startTime || !endTime) {
       toast({
@@ -71,7 +82,8 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, cur
       courseName,
       startTime,
       endTime,
-      description
+      description,
+      username: username
     };
     
     // افزودن یا به‌روزرسانی گزارش

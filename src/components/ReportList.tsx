@@ -11,6 +11,8 @@ interface ReportListProps {
   searchCourse: string;
   onEditReport?: (report: Report) => void;
   onDeleteReport?: (reportId: string) => void;
+  isPrivateAccess: boolean;
+  currentUsername?: string | null;
 }
 
 const ReportList: React.FC<ReportListProps> = ({ 
@@ -18,24 +20,31 @@ const ReportList: React.FC<ReportListProps> = ({
   searchDate, 
   searchCourse,
   onEditReport, 
-  onDeleteReport 
+  onDeleteReport,
+  isPrivateAccess,
+  currentUsername
 }) => {
-  // Filter reports based on search criteria
+  // فیلتر گزارش‌ها بر اساس معیارهای جستجو
   const filteredReports = reports.filter(report => {
+    // فقط گزارش‌های کاربر فعلی را نشان بده، مگر اینکه دسترسی خصوصی باشد
+    if (!isPrivateAccess && report.username !== currentUsername) {
+      return false;
+    }
+    
     const matchesDate = !searchDate || report.date.includes(searchDate);
     const matchesCourse = !searchCourse || 
       report.courseName.toLowerCase().includes(searchCourse.toLowerCase());
     return matchesDate && matchesCourse;
   });
 
-  // Sort by date (newest first) and then by start time
+  // مرتب‌سازی بر اساس تاریخ (جدیدترین اول) و سپس بر اساس زمان شروع
   const sortedReports = [...filteredReports].sort((a, b) => {
     const dateComparison = b.date.localeCompare(a.date);
     if (dateComparison !== 0) return dateComparison;
     return a.startTime.localeCompare(b.startTime);
   });
 
-  // Group reports by date
+  // گروه‌بندی گزارش‌ها بر اساس تاریخ
   const groupedReports: { [key: string]: Report[] } = {};
   
   sortedReports.forEach(report => {
@@ -57,7 +66,7 @@ const ReportList: React.FC<ReportListProps> = ({
     );
   }
 
-  // Calculate total study time for each date
+  // محاسبه مجموع زمان مطالعه برای هر تاریخ
   const calculateTotalTime = (dateReports: Report[]): string => {
     let totalMinutes = 0;
     
@@ -84,6 +93,17 @@ const ReportList: React.FC<ReportListProps> = ({
           const totalTime = calculateTotalTime(dateReports);
           const dayName = getPersianDayName(date);
           
+          // اضافه کردن یک روز به نام روز هفته (پنجشنبه به جای چهارشنبه)
+          const adjustedDayName = (() => {
+            const dayNames = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه"];
+            const index = dayNames.indexOf(dayName);
+            if (index >= 0) {
+              const newIndex = (index + 1) % 7;
+              return dayNames[newIndex];
+            }
+            return dayName;
+          })();
+          
           return (
             <AccordionItem key={date} value={date} className="neon-card mb-4 overflow-hidden border-0">
               <AccordionTrigger className="px-6 py-4 hover:no-underline">
@@ -92,7 +112,7 @@ const ReportList: React.FC<ReportListProps> = ({
                     <h3 className="neon-text text-xl text-right">
                       {date}
                     </h3>
-                    <span className="text-muted-foreground">({dayName})</span>
+                    <span className="text-muted-foreground">({adjustedDayName})</span>
                   </div>
                   <span className="text-neon text-lg">
                     مجموع: {totalTime}
@@ -103,8 +123,8 @@ const ReportList: React.FC<ReportListProps> = ({
                 <FormattedReport 
                   reports={dateReports} 
                   date={date} 
-                  onEditReport={onEditReport}
-                  onDeleteReport={onDeleteReport}
+                  onEditReport={isPrivateAccess ? onEditReport : undefined}
+                  onDeleteReport={isPrivateAccess ? onDeleteReport : undefined}
                   isAccordion={true}
                 />
               </AccordionContent>

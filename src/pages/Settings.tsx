@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Copy } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
 
 const Settings = () => {
   const [username, setUsername] = useState('');
@@ -12,6 +13,7 @@ const Settings = () => {
   const [inputCode, setInputCode] = useState('');
   const [isRegistered, setIsRegistered] = useState(false);
   const [isRecovering, setIsRecovering] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // بررسی وجود کاربر در هنگام بارگذاری صفحه
   useEffect(() => {
@@ -22,13 +24,32 @@ const Settings = () => {
       setUsername(storedUsername);
       setIsRegistered(true);
       
-      // نمایش کد بازیابی ذخیره شده
-      const storedCode = localStorage.getItem('recoveryCode_' + storedUsername);
-      if (storedCode) {
-        setRecoveryCode(storedCode);
-      }
+      // بازیابی کد بازیابی از دیتابیس
+      fetchRecoveryCode(storedUsername);
     }
   }, []);
+  
+  // بازیابی کد بازیابی از دیتابیس
+  const fetchRecoveryCode = async (username) => {
+    try {
+      const { data, error } = await supabase
+        .from('app_users')
+        .select('recovery_code')
+        .eq('username', username)
+        .single();
+      
+      if (error) {
+        console.error('خطا در بازیابی کد:', error);
+        return;
+      }
+      
+      if (data) {
+        setRecoveryCode(data.recovery_code);
+      }
+    } catch (error) {
+      console.error('خطا در دسترسی به دیتابیس:', error);
+    }
+  };
   
   // ایجاد کد بازیابی تصادفی
   const generateRecoveryCode = () => {
@@ -44,7 +65,7 @@ const Settings = () => {
   };
   
   // ثبت نام کاربر جدید
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!username || username.trim() === '') {
       toast({
         title: "خطا",
@@ -54,51 +75,105 @@ const Settings = () => {
       return;
     }
     
-    // بررسی وجود نام کاربری
-    const existingUsernames = Object.keys(localStorage)
-      .filter(key => key.startsWith('recoveryCode_'))
-      .map(key => key.replace('recoveryCode_', ''));
+    setIsLoading(true);
     
-    if (existingUsernames.includes(username)) {
+    try {
+      // بررسی وجود نام کاربری در دیتابیس
+      const { data: existingUser, error: checkError } = await supabase
+        .from('app_users')
+        .select('username')
+        .eq('username', username)
+        .single();
+      
+      if (existingUser) {
+        toast({
+          title: "خطا",
+          description: "این نام کاربری قبلا ثبت شده است",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // ایجاد و ذخیره کد بازیابی
+      const newCode = generateRecoveryCode();
+      
+      // ذخیره کاربر در دیتابیس
+      const { error: insertError } = await supabase
+        .from('app_users')
+        .insert([{ 
+          username: username, 
+          recovery_code: newCode
+        }]);
+      
+      if (insertError) {
+        console.error('خطا در ثبت کاربر:', insertError);
+        toast({
+          title: "خطا",
+          description: "مشکلی در ثبت‌نام رخ داد، لطفا دوباره تلاش کنید",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // ذخیره اطلاعات در localStorage
+      localStorage.setItem('reportUsername', username);
+      localStorage.setItem('userRegistered', 'true');
+      localStorage.setItem('currentAccessCode', username);
+      
+      setRecoveryCode(newCode);
+      setIsRegistered(true);
+      
+      toast({
+        title: "ثبت نام با موفقیت انجام شد",
+        description: "لطفا کد بازیابی را در جای امنی نگهداری کنید"
+      });
+    } catch (error) {
+      console.error('خطا:', error);
       toast({
         title: "خطا",
-        description: "این نام کاربری قبلا ثبت شده است",
+        description: "مشکلی در ارتباط با سرور رخ داد",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // بازیابی حساب کاربری
+  const handleRecovery = async () => {
+    if (!inputCode) {
+      toast({
+        title: "خطا",
+        description: "لطفا کد بازیابی را وارد کنید",
         variant: "destructive"
       });
       return;
     }
     
-    // ایجاد و ذخیره کد بازیابی
-    const newCode = generateRecoveryCode();
-    localStorage.setItem('reportUsername', username);
-    localStorage.setItem('userRegistered', 'true');
-    localStorage.setItem('recoveryCode_' + username, newCode);
-    localStorage.setItem('currentAccessCode', username);  // نام کاربری به عنوان کد دسترسی فعلی
+    setIsLoading(true);
     
-    setRecoveryCode(newCode);
-    setIsRegistered(true);
-    
-    toast({
-      title: "ثبت نام با موفقیت انجام شد",
-      description: "لطفا کد بازیابی را در جای امنی نگهداری کنید"
-    });
-    
-    // ایجاد فضای ذخیره‌سازی جداگانه برای گزارش‌های این کاربر
-    localStorage.setItem(`reports_${username}`, JSON.stringify([]));
-  };
-  
-  // بازیابی حساب کاربری
-  const handleRecovery = () => {
-    // بررسی همه کدهای بازیابی در localStorage
-    const recoveryEntries = Object.entries(localStorage)
-      .filter(([key]) => key.startsWith('recoveryCode_'));
-    
-    const matchingEntry = recoveryEntries.find(([_, value]) => value === inputCode);
-    
-    if (matchingEntry) {
-      const recoveredUsername = matchingEntry[0].replace('recoveryCode_', '');
+    try {
+      // جستجوی کد بازیابی در دیتابیس
+      const { data, error } = await supabase
+        .from('app_users')
+        .select('username, recovery_code')
+        .eq('recovery_code', inputCode)
+        .single();
+      
+      if (error || !data) {
+        toast({
+          title: "خطا",
+          description: "کد بازیابی نامعتبر است",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
       
       // تنظیم اطلاعات کاربر بازیابی شده
+      const recoveredUsername = data.username;
       localStorage.setItem('reportUsername', recoveredUsername);
       localStorage.setItem('userRegistered', 'true');
       localStorage.setItem('currentAccessCode', recoveredUsername);
@@ -112,25 +187,57 @@ const Settings = () => {
         title: "بازیابی موفقیت‌آمیز",
         description: `به حساب کاربری ${recoveredUsername} خوش آمدید`
       });
-    } else {
+    } catch (error) {
+      console.error('خطا در بازیابی:', error);
       toast({
         title: "خطا",
-        description: "کد بازیابی نامعتبر است",
+        description: "مشکلی در بازیابی حساب کاربری رخ داد",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   
   // ایجاد کد بازیابی جدید
-  const handleGenerateNewCode = () => {
+  const handleGenerateNewCode = async () => {
+    setIsLoading(true);
     const newCode = generateRecoveryCode();
-    localStorage.setItem('recoveryCode_' + username, newCode);
-    setRecoveryCode(newCode);
     
-    toast({
-      title: "کد بازیابی جدید ایجاد شد",
-      description: "لطفا کد جدید را در جای امنی نگهداری کنید"
-    });
+    try {
+      // به‌روزرسانی کد بازیابی در دیتابیس
+      const { error } = await supabase
+        .from('app_users')
+        .update({ recovery_code: newCode })
+        .eq('username', username);
+      
+      if (error) {
+        console.error('خطا در به‌روزرسانی کد:', error);
+        toast({
+          title: "خطا",
+          description: "مشکلی در به‌روزرسانی کد بازیابی رخ داد",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      setRecoveryCode(newCode);
+      
+      toast({
+        title: "کد بازیابی جدید ایجاد شد",
+        description: "لطفا کد جدید را در جای امنی نگهداری کنید"
+      });
+    } catch (error) {
+      console.error('خطا:', error);
+      toast({
+        title: "خطا",
+        description: "مشکلی در ارتباط با سرور رخ داد",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   // کپی کد بازیابی
@@ -180,6 +287,7 @@ const Settings = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   className="neon-input w-full"
                   placeholder="یک نام کاربری انتخاب کنید"
+                  disabled={isLoading}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   توجه: نام کاربری پس از ثبت قابل تغییر نخواهد بود
@@ -190,8 +298,9 @@ const Settings = () => {
                 <Button
                   onClick={handleRegister}
                   className="neon-button w-full"
+                  disabled={isLoading}
                 >
-                  ثبت نام و دریافت کد بازیابی
+                  {isLoading ? "در حال پردازش..." : "ثبت نام و دریافت کد بازیابی"}
                 </Button>
               </div>
             </div>
@@ -202,6 +311,7 @@ const Settings = () => {
                 <button 
                   onClick={() => setIsRecovering(true)} 
                   className="text-neon hover:underline"
+                  disabled={isLoading}
                 >
                   بازیابی حساب کاربری
                 </button>
@@ -220,6 +330,7 @@ const Settings = () => {
                       onChange={(e) => setInputCode(e.target.value)}
                       className="neon-input w-full"
                       placeholder="کد بازیابی خود را وارد کنید"
+                      disabled={isLoading}
                     />
                   </div>
                   
@@ -227,13 +338,15 @@ const Settings = () => {
                     <Button
                       onClick={handleRecovery}
                       className="neon-button"
+                      disabled={isLoading}
                     >
-                      بازیابی
+                      {isLoading ? "در حال بررسی..." : "بازیابی"}
                     </Button>
                     <Button
                       onClick={() => setIsRecovering(false)}
                       variant="outline"
                       className="border-neon/30"
+                      disabled={isLoading}
                     >
                       انصراف
                     </Button>
@@ -263,6 +376,7 @@ const Settings = () => {
                     size="sm"
                     variant="ghost"
                     className="p-1"
+                    disabled={isLoading}
                   >
                     <Copy className="h-4 w-4 text-neon" />
                   </Button>
@@ -276,14 +390,16 @@ const Settings = () => {
                 <Button
                   onClick={handleGenerateNewCode}
                   className="neon-button"
+                  disabled={isLoading}
                 >
-                  ایجاد کد بازیابی جدید
+                  {isLoading ? "در حال ایجاد..." : "ایجاد کد بازیابی جدید"}
                 </Button>
                 
                 <Button
                   onClick={handleLogout}
                   variant="outline"
                   className="border-neon/30"
+                  disabled={isLoading}
                 >
                   خروج از حساب کاربری
                 </Button>

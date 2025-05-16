@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Code, Lock, Unlock } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CodeSystemProps {
   onCodeAccess: (code: string, isPrivate: boolean) => void;
@@ -12,42 +13,127 @@ const CodeSystem: React.FC<CodeSystemProps> = ({ onCodeAccess, currentCode }) =>
   const [publicCode, setPublicCode] = useState('');
   const [privateCode, setPrivateCode] = useState('');
   const [enteredCode, setEnteredCode] = useState('');
-  const [isPrivateMode, setIsPrivateMode] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
   
-  // Load codes from localStorage on mount
+  // بارگذاری کدها از دیتابیس
   useEffect(() => {
-    const savedPublicCode = localStorage.getItem('publicAccessCode');
-    const savedPrivateCode = localStorage.getItem('privateAccessCode');
-    
-    if (savedPublicCode) setPublicCode(savedPublicCode);
-    if (savedPrivateCode) setPrivateCode(savedPrivateCode);
+    const storedUsername = localStorage.getItem('reportUsername');
+    if (storedUsername) {
+      setUsername(storedUsername);
+      loadCodesFromDatabase(storedUsername);
+    } else {
+      // اگر کاربر ثبت نشده است، کدها را از localStorage بخوان
+      const savedPublicCode = localStorage.getItem('publicAccessCode');
+      const savedPrivateCode = localStorage.getItem('privateAccessCode');
+      
+      if (savedPublicCode) setPublicCode(savedPublicCode);
+      if (savedPrivateCode) setPrivateCode(savedPrivateCode);
+    }
   }, []);
   
-  // Generate a random code with the specified format (Y3-XXXXX)
+  // بارگذاری کدها از دیتابیس
+  const loadCodesFromDatabase = async (username: string) => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('app_users')
+        .select('username, public_code, private_code')
+        .eq('username', username)
+        .single();
+      
+      if (error) {
+        console.error('خطا در بازیابی کدها از دیتابیس:', error);
+        return;
+      }
+      
+      if (data) {
+        if (data.public_code) setPublicCode(data.public_code);
+        if (data.private_code) setPrivateCode(data.private_code);
+      }
+    } catch (error) {
+      console.error('خطا در دسترسی به دیتابیس:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // ذخیره کدها در دیتابیس
+  const saveCodeToDatabase = async (isPublic: boolean, code: string) => {
+    if (!username) return;
+    
+    try {
+      const updateData = isPublic 
+        ? { public_code: code } 
+        : { private_code: code };
+      
+      const { error } = await supabase
+        .from('app_users')
+        .update(updateData)
+        .eq('username', username);
+      
+      if (error) {
+        console.error('خطا در ذخیره کد در دیتابیس:', error);
+        toast({
+          title: "خطا",
+          description: "مشکلی در ذخیره کد دسترسی رخ داد",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('خطا در ارتباط با سرور:', error);
+    }
+  };
+  
+  // ایجاد کد تصادفی به فرمت (Y3-XXXXX)
   const generateRandomCode = (): string => {
-    const randomPart = Math.floor(10000 + Math.random() * 90000); // 5-digit random number
+    const randomPart = Math.floor(10000 + Math.random() * 90000); // عدد تصادفی 5 رقمی
     return `Y3-${randomPart}`;
   };
   
-  const handleGeneratePublicCode = () => {
+  const handleGeneratePublicCode = async () => {
     const newCode = generateRandomCode();
     setPublicCode(newCode);
-    localStorage.setItem('publicAccessCode', newCode);
-    toast.success('کد عمومی جدید ایجاد شد');
+    
+    if (username) {
+      // ذخیره در دیتابیس
+      await saveCodeToDatabase(true, newCode);
+    } else {
+      // ذخیره محلی
+      localStorage.setItem('publicAccessCode', newCode);
+    }
+    
+    toast({
+      title: "کد عمومی جدید ایجاد شد"
+    });
   };
   
-  const handleGeneratePrivateCode = () => {
+  const handleGeneratePrivateCode = async () => {
     const newCode = generateRandomCode();
     setPrivateCode(newCode);
-    localStorage.setItem('privateAccessCode', newCode);
-    toast.success('کد خصوصی جدید ایجاد شد');
+    
+    if (username) {
+      // ذخیره در دیتابیس
+      await saveCodeToDatabase(false, newCode);
+    } else {
+      // ذخیره محلی
+      localStorage.setItem('privateAccessCode', newCode);
+    }
+    
+    toast({
+      title: "کد خصوصی جدید ایجاد شد"
+    });
   };
   
   const handleAccessWithPublicCode = () => {
     if (publicCode) {
       onCodeAccess(publicCode, false);
     } else {
-      toast.error('ابتدا یک کد عمومی ایجاد کنید');
+      toast({
+        title: "خطا",
+        description: "ابتدا یک کد عمومی ایجاد کنید",
+        variant: "destructive"
+      });
     }
   };
   
@@ -55,23 +141,62 @@ const CodeSystem: React.FC<CodeSystemProps> = ({ onCodeAccess, currentCode }) =>
     if (privateCode) {
       onCodeAccess(privateCode, true);
     } else {
-      toast.error('ابتدا یک کد خصوصی ایجاد کنید');
+      toast({
+        title: "خطا",
+        description: "ابتدا یک کد خصوصی ایجاد کنید",
+        variant: "destructive"
+      });
     }
   };
   
-  const handleAccessWithEnteredCode = () => {
+  const handleAccessWithEnteredCode = async () => {
     if (!enteredCode) {
-      toast.error('لطفاً کد را وارد کنید');
+      toast({
+        title: "خطا",
+        description: "لطفاً کد را وارد کنید",
+        variant: "destructive"
+      });
       return;
     }
     
-    // Check if the entered code matches public or private code
-    if (enteredCode === privateCode) {
-      onCodeAccess(enteredCode, true);
-    } else if (enteredCode === publicCode) {
-      onCodeAccess(enteredCode, false);
-    } else {
-      toast.error('کد وارد شده معتبر نیست');
+    setIsLoading(true);
+    
+    try {
+      // جستجوی کد در دیتابیس
+      const { data: publicData } = await supabase
+        .from('app_users')
+        .select('username')
+        .eq('public_code', enteredCode)
+        .single();
+      
+      const { data: privateData } = await supabase
+        .from('app_users')
+        .select('username')
+        .eq('private_code', enteredCode)
+        .single();
+      
+      if (privateData) {
+        onCodeAccess(enteredCode, true);
+      } else if (publicData) {
+        onCodeAccess(enteredCode, false);
+      } else {
+        // اگر در دیتابیس نبود، بررسی محلی
+        if (enteredCode === privateCode) {
+          onCodeAccess(enteredCode, true);
+        } else if (enteredCode === publicCode) {
+          onCodeAccess(enteredCode, false);
+        } else {
+          toast({
+            title: "خطا",
+            description: "کد وارد شده معتبر نیست",
+            variant: "destructive"
+          });
+        }
+      }
+    } catch (error) {
+      console.error('خطا در بررسی کد:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -91,7 +216,7 @@ const CodeSystem: React.FC<CodeSystemProps> = ({ onCodeAccess, currentCode }) =>
       ) : null}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Create/Manage Codes */}
+        {/* ایجاد/مدیریت کدها */}
         <div className="space-y-4">
           <h3 className="text-lg font-bold flex items-center">
             <Code className="w-5 h-5 mr-2" />
@@ -108,6 +233,7 @@ const CodeSystem: React.FC<CodeSystemProps> = ({ onCodeAccess, currentCode }) =>
                 <button 
                   onClick={handleGeneratePrivateCode}
                   className="text-xs text-neon hover:underline"
+                  disabled={isLoading}
                 >
                   ایجاد کد جدید
                 </button>
@@ -119,10 +245,12 @@ const CodeSystem: React.FC<CodeSystemProps> = ({ onCodeAccess, currentCode }) =>
                   onChange={(e) => setPrivateCode(e.target.value)}
                   className="neon-input w-full font-mono"
                   placeholder="Y3-XXXXX"
+                  disabled={isLoading}
                 />
                 <button 
                   onClick={handleAccessWithPrivateCode}
                   className="neon-button mr-2"
+                  disabled={isLoading}
                 >
                   استفاده
                 </button>
@@ -141,6 +269,7 @@ const CodeSystem: React.FC<CodeSystemProps> = ({ onCodeAccess, currentCode }) =>
                 <button 
                   onClick={handleGeneratePublicCode}
                   className="text-xs text-neon hover:underline"
+                  disabled={isLoading}
                 >
                   ایجاد کد جدید
                 </button>
@@ -152,10 +281,12 @@ const CodeSystem: React.FC<CodeSystemProps> = ({ onCodeAccess, currentCode }) =>
                   onChange={(e) => setPublicCode(e.target.value)}
                   className="neon-input w-full font-mono"
                   placeholder="Y3-XXXXX"
+                  disabled={isLoading}
                 />
                 <button 
                   onClick={handleAccessWithPublicCode}
                   className="neon-button mr-2"
+                  disabled={isLoading}
                 >
                   استفاده
                 </button>
@@ -167,7 +298,7 @@ const CodeSystem: React.FC<CodeSystemProps> = ({ onCodeAccess, currentCode }) =>
           </div>
         </div>
         
-        {/* Access with Code */}
+        {/* ورود با کد */}
         <div className="space-y-4">
           <h3 className="text-lg font-bold">ورود با کد</h3>
           <div>
@@ -181,12 +312,14 @@ const CodeSystem: React.FC<CodeSystemProps> = ({ onCodeAccess, currentCode }) =>
                 onChange={(e) => setEnteredCode(e.target.value)}
                 className="neon-input w-full font-mono"
                 placeholder="Y3-XXXXX"
+                disabled={isLoading}
               />
               <button 
                 onClick={handleAccessWithEnteredCode}
                 className="neon-button mr-2"
+                disabled={isLoading}
               >
-                ورود
+                {isLoading ? "در حال بررسی..." : "ورود"}
               </button>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
