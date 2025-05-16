@@ -17,15 +17,18 @@ export const getCurrentJalaliDate = (): string => {
   return dayjs().calendar('jalali').locale('fa').format('YYYY/MM/DD');
 };
 
-// تبدیل تاریخ شمسی (رشته) به نام روز هفته
+// تبدیل تاریخ شمسی (رشته) به نام روز هفته (یک روز جلوتر)
 export const getPersianDayName = (jalaliDateStr: string): string => {
   // تبدیل رشته تاریخ شمسی به آبجکت dayjs
   const [year, month, day] = jalaliDateStr.split('/').map(Number);
   // @ts-ignore - The calendar method is added by jalaliday plugin but TypeScript doesn't know it
   const jalaliDate = dayjs().calendar('jalali').year(year).month(month - 1).date(day);
   
+  // اضافه کردن یک روز به تاریخ
+  const nextDay = jalaliDate.add(1, 'day');
+  
   // دریافت نام روز هفته
-  const dayOfWeek = jalaliDate.day();
+  const dayOfWeek = nextDay.day();
   
   // آرایه نام‌های روزهای هفته به فارسی
   const persianDays = ["یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه"];

@@ -93,17 +93,6 @@ const ReportList: React.FC<ReportListProps> = ({
           const totalTime = calculateTotalTime(dateReports);
           const dayName = getPersianDayName(date);
           
-          // اضافه کردن یک روز به نام روز هفته (پنجشنبه به جای چهارشنبه)
-          const adjustedDayName = (() => {
-            const dayNames = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه"];
-            const index = dayNames.indexOf(dayName);
-            if (index >= 0) {
-              const newIndex = (index + 1) % 7;
-              return dayNames[newIndex];
-            }
-            return dayName;
-          })();
-          
           return (
             <AccordionItem key={date} value={date} className="neon-card mb-4 overflow-hidden border-0">
               <AccordionTrigger className="px-6 py-4 hover:no-underline">
@@ -112,7 +101,7 @@ const ReportList: React.FC<ReportListProps> = ({
                     <h3 className="neon-text text-xl text-right">
                       {date}
                     </h3>
-                    <span className="text-muted-foreground">({adjustedDayName})</span>
+                    <span className="text-muted-foreground">({dayName})</span>
                   </div>
                   <span className="text-neon text-lg">
                     مجموع: {totalTime}
