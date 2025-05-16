@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Report } from './ReportForm';
+import { Report } from '@/types/database';
 import { ClipboardCopy, Edit, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { getPersianDayName, getYesterdayJalaliDate } from '@/utils/jalali';
