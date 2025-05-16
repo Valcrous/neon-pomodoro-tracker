@@ -1,23 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { formatJalali, getCurrentJalaliDate } from '@/utils/jalali';
 import { toast } from '@/components/ui/use-toast';
+import type { Report } from '@/types/database';
 
 interface ReportFormProps {
   onAddReport: (report: Report) => void;
   initialReport?: Report | null;
   currentDate?: string;
   username: string | null;
-}
-
-export interface Report {
-  id: string;
-  date: string;
-  courseName: string;
-  startTime: string;
-  endTime: string;
-  description: string;
-  username: string;
 }
 
 const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, currentDate, username }) => {

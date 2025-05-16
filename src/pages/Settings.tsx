@@ -6,6 +6,7 @@ import { Copy } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
+import type { AppUser } from '@/types/database';
 
 const Settings = () => {
   const [username, setUsername] = useState('');

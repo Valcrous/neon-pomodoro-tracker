@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Code, Lock, Unlock } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import type { AppUser } from '@/types/database';
 
 interface CodeSystemProps {
   onCodeAccess: (code: string, isPrivate: boolean) => void;
@@ -323,7 +323,7 @@ const CodeSystem: React.FC<CodeSystemProps> = ({ onCodeAccess, currentCode }) =>
               </button>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              با وارد کردن کد، به گزارش‌های مربوط به آن دسترسی پیدا می‌کنید
+              با وارد کردن کد، به گزارش���های مربوط به آن دسترسی پیدا می‌کنید
             </p>
           </div>
           

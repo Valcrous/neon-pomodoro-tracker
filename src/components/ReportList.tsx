@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Report } from './ReportForm';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import FormattedReport from './FormattedReport';
 import { getPersianDayName } from '@/utils/jalali';
+import type { Report } from '@/types/database';
 
 interface ReportListProps {
   reports: Report[];
