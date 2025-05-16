@@ -4,15 +4,16 @@ import dayjs from 'dayjs';
 
 // تنظیمات تاریخ شمسی با استفاده از افزونه jalaliday
 dayjs.extend(jalaliday);
-dayjs.calendar('jalali');
 
 // تبدیل تاریخ میلادی به شمسی
 export const formatJalali = (date: Date | string): string => {
+  // @ts-ignore - The calendar method is added by jalaliday plugin but TypeScript doesn't know it
   return dayjs(date).calendar('jalali').locale('fa').format('YYYY/MM/DD');
 };
 
 // دریافت تاریخ شمسی امروز
 export const getCurrentJalaliDate = (): string => {
+  // @ts-ignore - The calendar method is added by jalaliday plugin but TypeScript doesn't know it
   return dayjs().calendar('jalali').locale('fa').format('YYYY/MM/DD');
 };
 
@@ -20,6 +21,7 @@ export const getCurrentJalaliDate = (): string => {
 export const getPersianDayName = (jalaliDateStr: string): string => {
   // تبدیل رشته تاریخ شمسی به آبجکت dayjs
   const [year, month, day] = jalaliDateStr.split('/').map(Number);
+  // @ts-ignore - The calendar method is added by jalaliday plugin but TypeScript doesn't know it
   const jalaliDate = dayjs().calendar('jalali').year(year).month(month - 1).date(day);
   
   // دریافت نام روز هفته
@@ -36,6 +38,7 @@ export const getYesterdayJalaliDate = (jalaliDateStr: string): string => {
   try {
     // تبدیل رشته تاریخ شمسی به آبجکت dayjs
     const [year, month, day] = jalaliDateStr.split('/').map(Number);
+    // @ts-ignore - The calendar method is added by jalaliday plugin but TypeScript doesn't know it
     const jalaliDate = dayjs().calendar('jalali').year(year).month(month - 1).date(day);
     
     // کم کردن یک روز از تاریخ
