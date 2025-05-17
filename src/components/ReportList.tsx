@@ -21,16 +21,10 @@ const ReportList: React.FC<ReportListProps> = ({
   searchCourse,
   onEditReport, 
   onDeleteReport,
-  isPrivateAccess,
-  currentUsername
+  isPrivateAccess
 }) => {
   // فیلتر گزارش‌ها بر اساس معیارهای جستجو
   const filteredReports = reports.filter(report => {
-    // فقط گزارش‌های کاربر فعلی را نشان بده، مگر اینکه دسترسی خصوصی باشد
-    if (!isPrivateAccess && report.username !== currentUsername) {
-      return false;
-    }
-    
     const matchesDate = !searchDate || report.date.includes(searchDate);
     const matchesCourse = !searchCourse || 
       report.courseName.toLowerCase().includes(searchCourse.toLowerCase());

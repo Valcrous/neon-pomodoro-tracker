@@ -5,10 +5,6 @@ import ReportForm from '@/components/ReportForm';
 import ReportSearch from '@/components/ReportSearch';
 import ReportList from '@/components/ReportList';
 import { toast } from '@/components/ui/use-toast';
-import { getYesterdayJalaliDate } from '@/utils/jalali';
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { Settings } from 'lucide-react';
 import type { Report } from '@/types/database';
 
 const Reports: React.FC = () => {
@@ -16,21 +12,10 @@ const Reports: React.FC = () => {
   const [searchDate, setSearchDate] = useState('');
   const [searchCourse, setSearchCourse] = useState('');
   const [editingReport, setEditingReport] = useState<Report | null>(null);
-  const [isUserRegistered, setIsUserRegistered] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // بررسی ثبت نام کاربر و بارگذاری گزارش‌ها
+  // بارگذاری گزارش‌های محلی
   useEffect(() => {
-    const storedUsername = localStorage.getItem('reportUsername');
-    const storedUserRegistered = localStorage.getItem('userRegistered');
-    
-    if (storedUsername && storedUserRegistered === 'true') {
-      setIsUserRegistered(true);
-      setUsername(storedUsername);
-    }
-    
-    // در هر صورت گزارش‌های محلی بارگذاری می‌شوند
     loadLocalData();
   }, []);
   
@@ -101,33 +86,10 @@ const Reports: React.FC = () => {
   return (
     <Layout>
       <div className="space-y-12">
-        {isUserRegistered ? (
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-sm text-muted-foreground">
-                خوش آمدید، <span className="text-neon">{localStorage.getItem('reportUsername')}</span>
-              </p>
-            </div>
-            <Link to="/settings" className="flex items-center text-sm text-muted-foreground hover:text-neon">
-              <Settings className="h-4 w-4 mr-1" />
-              تنظیمات
-            </Link>
-          </div>
-        ) : (
-          <div className="bg-background/40 border border-neon/30 rounded-md p-4 mb-6">
-            <p className="mb-2">برای ذخیره دائمی گزارش‌های خود و دسترسی از همه دستگاه‌ها، حساب کاربری ایجاد کنید.</p>
-            <Link to="/settings">
-              <Button className="neon-button">
-                ایجاد حساب کاربری
-              </Button>
-            </Link>
-          </div>
-        )}
-      
         <ReportForm 
           onAddReport={handleAddReport} 
           initialReport={editingReport} 
-          username={username || 'مهمان'}
+          username="کاربر"
         />
         
         <div>
@@ -146,7 +108,7 @@ const Reports: React.FC = () => {
               onEditReport={handleEditReport}
               onDeleteReport={handleDeleteReport}
               isPrivateAccess={true}
-              currentUsername={username}
+              currentUsername={null}
             />
           )}
         </div>

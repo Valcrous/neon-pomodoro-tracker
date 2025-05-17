@@ -47,15 +47,6 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, cur
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!username) {
-      toast({
-        title: "خطا",
-        description: "ابتدا باید یک حساب کاربری ایجاد کنید",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     // اعتبارسنجی
     if (!courseName || !startTime || !endTime) {
       toast({
@@ -74,7 +65,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, cur
       startTime,
       endTime,
       description,
-      username: username
+      username: username || 'کاربر'
     };
     
     console.log('گزارش آماده برای ذخیره:', newReport);
