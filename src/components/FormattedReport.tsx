@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Report } from '@/types/database';
 import { ClipboardCopy, Edit, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
-import { getPersianDayName, getYesterdayJalaliDate2 } from '@/utils/jalali';
+import { getPersianDayName } from '@/utils/jalali';
 
 interface FormattedReportProps {
   reports: Report[];
@@ -78,41 +79,6 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
   const totalTime = calculateTotalTime(reports);
   const dayName = getPersianDayName(date);
   
-  // بدست آوردن گزارش‌های دیروز برای مقایسه
-  const getYesterdayTotalTime = (): string => {
-    try {
-      const yesterdayDate = getYesterdayJalaliDate2(date);
-      
-      const personalStorage = localStorage.getItem('personal_reports');
-      if (!personalStorage) return "00:00";
-      
-      const allReports: Report[] = JSON.parse(personalStorage);
-      const yesterdayReports = allReports.filter(r => r.date === yesterdayDate);
-      
-      if (yesterdayReports.length === 0) return "00:00";
-      
-      return calculateTotalTime(yesterdayReports);
-    } catch (error) {
-      console.error('خطا در محاسبه کل زمان دیروز:', error);
-      return "00:00";
-    }
-  };
-  
-  // مقایسه با زمان مطالعه دیروز
-  const yesterdayTime = getYesterdayTotalTime();
-  const yesterdayMinutes = 
-    parseInt(yesterdayTime.split(':')[0]) * 60 + 
-    parseInt(yesterdayTime.split(':')[1]);
-  
-  const totalMinutes = 
-    parseInt(totalTime.split(':')[0]) * 60 + 
-    parseInt(totalTime.split(':')[1]);
-  
-  const timeDifference = totalMinutes - yesterdayMinutes;
-  const percentageDiff = yesterdayMinutes > 0 
-    ? Math.round((timeDifference / yesterdayMinutes) * 100 * 10) / 10
-    : 100; // اگر دیروز 0 بود، پس افزایش 100% است
-  
   // تابع برای کپی کردن گزارش قالب‌بندی شده به کلیپ‌بورد
   const copyToClipboard = () => {
     let formattedText = `📊 جمع ساعات مطالعه شما در تاریخ ${date} (${dayName})\n\n`;
@@ -132,25 +98,6 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
       formattedText += '\n';
     });
     
-    formattedText += `📈 مقایسه با روز قبل:\n`;
-    if (timeDifference > 0) {
-      const hoursDiff = Math.floor(timeDifference / 60);
-      const minutesDiff = timeDifference % 60;
-      const timeDiffFormatted = `${hoursDiff.toString().padStart(2, '0')}:${minutesDiff.toString().padStart(2, '0')}`;
-      formattedText += `✅ امروز ${timeDiffFormatted} (${percentageDiff}%) بیشتر از دیروز مطالعه داشتی!\n`;
-      formattedText += `💯 به خودت ببال، این پیشرفت نتیجه تلاش مستمر توست.`;
-    } else if (timeDifference < 0) {
-      const absDiff = Math.abs(timeDifference);
-      const hoursDiff = Math.floor(absDiff / 60);
-      const minutesDiff = absDiff % 60;
-      const timeDiffFormatted = `${hoursDiff.toString().padStart(2, '0')}:${minutesDiff.toString().padStart(2, '0')}`;
-      formattedText += `⚠️ امروز ${timeDiffFormatted} (${Math.abs(percentageDiff)}%) کمتر از دیروز مطالعه داشتی.\n`;
-      formattedText += `🔄 سعی کن فردا جبران کنی!`;
-    } else {
-      formattedText += `📊 مطالعه امروز مساوی با دیروز بود.\n`;
-      formattedText += `🔄 سعی کن فردا بیشتر مطالعه کنی!`;
-    }
-    
     navigator.clipboard.writeText(formattedText)
       .then(() => toast({
         title: "گزارش کپی شد"
@@ -163,7 +110,6 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
 
   // اگر در آکاردئون استفاده شود، یک نسخه فشرده‌تر را نمایش دهید
   if (isAccordion) {
-    // ... keep existing code (نسخه آکاردئون)
     return (
       <div className="pb-4">
         <div className="flex justify-between items-start mb-4">
@@ -220,36 +166,11 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
             );
           })}
         </div>
-        
-        <div className="mt-6 border-t border-neon/30 pt-4">
-          <h4 className="font-bold mb-2">📈 مقایسه با روز قبل:</h4>
-          {timeDifference > 0 ? (
-            <>
-              <p className="text-green-400">
-                ✅ امروز {Math.floor(timeDifference / 60).toString().padStart(2, '0')}:{(timeDifference % 60).toString().padStart(2, '0')} ({percentageDiff}%) بیشتر از دیروز مطالعه داشتی!
-              </p>
-              <p className="text-green-400">💯 به خودت ببال، این پیشرفت نتیجه تلاش مستمر توست.</p>
-            </>
-          ) : timeDifference < 0 ? (
-            <>
-              <p className="text-yellow-400">
-                ⚠️ امروز {Math.floor(Math.abs(timeDifference) / 60).toString().padStart(2, '0')}:{(Math.abs(timeDifference) % 60).toString().padStart(2, '0')} ({Math.abs(percentageDiff)}%) کمتر از دیروز مطالعه داشتی.
-              </p>
-              <p className="text-yellow-400">🔄 سعی کن فردا جبران کنی!</p>
-            </>
-          ) : (
-            <>
-              <p className="text-blue-400">📊 مطالعه امروز مساوی با دیروز بود.</p>
-              <p className="text-blue-400">🔄 سعی کن فردا بیشتر مطالعه کنی!</p>
-            </>
-          )}
-        </div>
       </div>
     );
   }
 
   // نمای استاندارد (غیرآکاردئون)
-  // ... keep existing code (نسخه استاندارد)
   return (
     <div className="neon-card p-6 text-right" dir="rtl">
       <div className="flex justify-between items-start mb-4">
@@ -312,30 +233,6 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
             );
           })}
         </div>
-      </div>
-      
-      <div className="mt-6 border-t border-neon/30 pt-4">
-        <h4 className="font-bold mb-2">📈 مقایسه با روز قبل:</h4>
-        {timeDifference > 0 ? (
-          <>
-            <p className="text-green-400">
-              ✅ امروز {Math.floor(timeDifference / 60).toString().padStart(2, '0')}:{(timeDifference % 60).toString().padStart(2, '0')} ({percentageDiff}%) بیشتر از دیروز مطالعه داشتی!
-            </p>
-            <p className="text-green-400">💯 به خودت ببال، این پیشرفت نتیجه تلاش مستمر توست.</p>
-          </>
-        ) : timeDifference < 0 ? (
-          <>
-            <p className="text-yellow-400">
-              ⚠️ امروز {Math.floor(Math.abs(timeDifference) / 60).toString().padStart(2, '0')}:{(Math.abs(timeDifference) % 60).toString().padStart(2, '0')} ({Math.abs(percentageDiff)}%) کمتر از دیروز مطالعه داشتی.
-            </p>
-            <p className="text-yellow-400">🔄 سعی کن فردا جبران کنی!</p>
-          </>
-        ) : (
-          <>
-            <p className="text-blue-400">📊 مطالعه امروز مساوی با دیروز بود.</p>
-            <p className="text-blue-400">🔄 سعی کن فردا بیشتر مطالعه کنی!</p>
-          </>
-        )}
       </div>
     </div>
   );
