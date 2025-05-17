@@ -92,6 +92,8 @@ const Reports: React.FC = () => {
   const loadReportsFromDatabase = async (usernameToLoad: string) => {
     setIsLoading(true);
     try {
+      console.log('در حال بارگیری گزارش‌های کاربر:', usernameToLoad);
+      
       const { data, error } = await supabase
         .from('reports')
         .select('*')
@@ -106,6 +108,7 @@ const Reports: React.FC = () => {
         });
         setReports([]);
       } else {
+        console.log('گزارش‌های بارگیری شده:', data);
         setReports(data || []);
       }
     } catch (error) {
@@ -139,14 +142,20 @@ const Reports: React.FC = () => {
         return;
       }
       
-      const { error } = await supabase
+      console.log('در حال ذخیره گزارش در دیتابیس:', report);
+      
+      const { data, error } = await supabase
         .from('reports')
-        .upsert([report], { onConflict: 'id' });
+        .upsert([report])
+        .select();
       
       if (error) {
         console.error('خطا در ذخیره گزارش:', error);
         throw error;
       }
+      
+      console.log('گزارش با موفقیت ذخیره شد:', data);
+      return data?.[0];
     } catch (error) {
       console.error('خطا در ارتباط با دیتابیس:', error);
       throw error;
@@ -175,12 +184,12 @@ const Reports: React.FC = () => {
   const handleAddReport = async (newReport: Report) => {
     if (isUserRegistered) {
       try {
-        await saveReportToDatabase(newReport);
+        const savedReport = await saveReportToDatabase(newReport);
         
         if (editingReport) {
           // به‌روزرسانی گزارش موجود در state
           setReports(prev => prev.map(report => 
-            report.id === editingReport.id ? newReport : report
+            report.id === editingReport.id ? (savedReport || newReport) : report
           ));
           setEditingReport(null);
           toast({
@@ -188,7 +197,7 @@ const Reports: React.FC = () => {
           });
         } else {
           // افزودن گزارش جدید به state
-          setReports(prev => [newReport, ...prev]);
+          setReports(prev => [savedReport || newReport, ...prev]);
           toast({
             title: "گزارش با موفقیت ثبت شد"
           });

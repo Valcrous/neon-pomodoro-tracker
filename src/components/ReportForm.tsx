@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { formatJalali, getCurrentJalaliDate } from '@/utils/jalali';
 import { toast } from '@/components/ui/use-toast';
@@ -75,6 +76,8 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, cur
       description,
       username: username
     };
+    
+    console.log('گزارش آماده برای ذخیره:', newReport);
     
     // افزودن یا به‌روزرسانی گزارش
     onAddReport(newReport);
