@@ -17,6 +17,12 @@ export const getCurrentJalaliDate = (): string => {
   return dayjs().calendar('jalali').locale('fa').format('YYYY/MM/DD');
 };
 
+// دریافت تاریخ شمسی یک روز قبل
+export const getYesterdayJalaliDate = (): string => {
+  // @ts-ignore - The calendar method is added by jalaliday plugin but TypeScript doesn't know it
+  return dayjs().subtract(1, 'day').calendar('jalali').locale('fa').format('YYYY/MM/DD');
+};
+
 // تبدیل تاریخ شمسی (رشته) به نام روز هفته (یک روز جلوتر)
 export const getPersianDayName = (jalaliDateStr: string): string => {
   try {
@@ -42,7 +48,7 @@ export const getPersianDayName = (jalaliDateStr: string): string => {
 };
 
 // محاسبه تاریخ دیروز در تقویم جلالی
-export const getYesterdayJalaliDate = (jalaliDateStr: string): string => {
+export const getYesterdayJalaliDate2 = (jalaliDateStr: string): string => {
   try {
     // تبدیل رشته تاریخ شمسی به آبجکت dayjs
     const [year, month, day] = jalaliDateStr.split('/').map(Number);

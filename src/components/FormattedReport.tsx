@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Report } from '@/types/database';
 import { ClipboardCopy, Edit, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
-import { getPersianDayName, getYesterdayJalaliDate } from '@/utils/jalali';
+import { getPersianDayName, getYesterdayJalaliDate2 } from '@/utils/jalali';
 
 interface FormattedReportProps {
   reports: Report[];
@@ -79,38 +78,19 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
   const totalTime = calculateTotalTime(reports);
   const dayName = getPersianDayName(date);
   
-  // بدست آوردن تاریخ دیروز با استفاده از تابع کمکی
-  const getYesterdayDate = (dateStr: string): string | null => {
-    try {
-      return getYesterdayJalaliDate(dateStr);
-    } catch (error) {
-      console.error('خطا در محاسبه تاریخ دیروز:', error);
-      return null;
-    }
-  };
-  
-  // بدست آوردن کل زمان مطالعه دیروز (از localStorage)
+  // بدست آوردن گزارش‌های دیروز برای مقایسه
   const getYesterdayTotalTime = (): string => {
     try {
-      const yesterdayDate = getYesterdayDate(date);
-      if (!yesterdayDate) return "00:00";
+      const yesterdayDate = getYesterdayJalaliDate2(date);
       
-      // بدست آوردن کد دسترسی فعلی
-      const currentCode = localStorage.getItem('currentAccessCode');
-      if (!currentCode) return "00:00";
+      const personalStorage = localStorage.getItem('personal_reports');
+      if (!personalStorage) return "00:00";
       
-      // تلاش برای بدست آوردن گزارش‌ها برای کد فعلی
-      const storageKey = `reports_${currentCode}`;
-      const savedReports = localStorage.getItem(storageKey);
-      if (!savedReports) return "00:00";
-      
-      // تجزیه گزارش‌ها و فیلتر کردن بر اساس تاریخ دیروز
-      const allReports: Report[] = JSON.parse(savedReports);
+      const allReports: Report[] = JSON.parse(personalStorage);
       const yesterdayReports = allReports.filter(r => r.date === yesterdayDate);
       
       if (yesterdayReports.length === 0) return "00:00";
       
-      // محاسبه کل زمان برای گزارش‌های دیروز
       return calculateTotalTime(yesterdayReports);
     } catch (error) {
       console.error('خطا در محاسبه کل زمان دیروز:', error);
@@ -183,7 +163,7 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
 
   // اگر در آکاردئون استفاده شود، یک نسخه فشرده‌تر را نمایش دهید
   if (isAccordion) {
-    // ... کد موجود نسخه آکاردئون حفظ می‌شود
+    // ... keep existing code (نسخه آکاردئون)
     return (
       <div className="pb-4">
         <div className="flex justify-between items-start mb-4">
@@ -269,7 +249,7 @@ const FormattedReport: React.FC<FormattedReportProps> = ({
   }
 
   // نمای استاندارد (غیرآکاردئون)
-  // ... کد موجود نسخه استاندارد حفظ می‌شود
+  // ... keep existing code (نسخه استاندارد)
   return (
     <div className="neon-card p-6 text-right" dir="rtl">
       <div className="flex justify-between items-start mb-4">

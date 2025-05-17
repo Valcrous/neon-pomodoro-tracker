@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { formatJalali, getCurrentJalaliDate } from '@/utils/jalali';
+import { formatJalali, getYesterdayJalaliDate } from '@/utils/jalali';
 import { toast } from '@/components/ui/use-toast';
 import type { Report } from '@/types/database';
 
@@ -19,8 +19,8 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, cur
   const [showForm, setShowForm] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
-  // استفاده از تاریخ ارائه شده یا بازگشت به getCurrentJalaliDate
-  const today = currentDate || getCurrentJalaliDate();
+  // استفاده از تاریخ یک روز قبل
+  const today = getYesterdayJalaliDate();
 
   // تنظیم مقادیر فرم هنگام ویرایش یک گزارش موجود
   useEffect(() => {
