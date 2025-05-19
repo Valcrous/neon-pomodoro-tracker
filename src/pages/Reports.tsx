@@ -4,7 +4,7 @@ import Layout from '@/components/Layout';
 import ReportForm from '@/components/ReportForm';
 import ReportSearch from '@/components/ReportSearch';
 import ReportList from '@/components/ReportList';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import type { Report } from '@/types/database';
 
 const Reports: React.FC = () => {
@@ -44,17 +44,13 @@ const Reports: React.FC = () => {
       setReports(updatedReports);
       localStorage.setItem('personal_reports', JSON.stringify(updatedReports));
       setEditingReport(null);
-      toast({
-        title: "گزارش با موفقیت بروزرسانی شد"
-      });
+      toast("گزارش با موفقیت بروزرسانی شد");
     } else {
       // افزودن گزارش جدید
       const updatedReports = [newReport, ...reports];
       setReports(updatedReports);
       localStorage.setItem('personal_reports', JSON.stringify(updatedReports));
-      toast({
-        title: "گزارش با موفقیت ثبت شد"
-      });
+      toast("گزارش با موفقیت ثبت شد");
     }
   };
   
@@ -71,9 +67,7 @@ const Reports: React.FC = () => {
       const updatedReports = reports.filter(report => report.id !== reportId);
       setReports(updatedReports);
       localStorage.setItem('personal_reports', JSON.stringify(updatedReports));
-      toast({
-        title: "گزارش با موفقیت حذف شد"
-      });
+      toast("گزارش با موفقیت حذف شد");
     }
   };
   

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { formatJalali, getYesterdayJalaliDate } from '@/utils/jalali';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import type { Report } from '@/types/database';
 
 interface ReportFormProps {
@@ -49,11 +49,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, cur
     
     // اعتبارسنجی
     if (!courseName || !startTime || !endTime) {
-      toast({
-        title: "خطا",
-        description: "لطفا تمامی فیلدهای اجباری را پر کنید",
-        variant: "destructive"
-      });
+      toast("خطا: لطفا تمامی فیلدهای اجباری را پر کنید");
       return;
     }
     
@@ -68,21 +64,12 @@ const ReportForm: React.FC<ReportFormProps> = ({ onAddReport, initialReport, cur
       username: username || 'کاربر'
     };
     
-    console.log('گزارش آماده برای ذخیره:', newReport);
-    
     // افزودن یا به‌روزرسانی گزارش
     onAddReport(newReport);
     
-    // بازنشانی فرم یا درخواست ورودی دیگر
+    // بازنشانی فرم
     if (!isEditing) {
-      // سؤال اینکه آیا کاربر می‌خواهد گزارش دیگری ثبت کند
-      const addAnother = window.confirm('آیا می‌خواهید گزارش دیگری برای امروز ثبت کنید؟');
-      if (addAnother) {
-        resetForm();
-      } else {
-        resetForm();
-        setShowForm(false);
-      }
+      resetForm();
     } else {
       resetForm();
     }
