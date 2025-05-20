@@ -1,6 +1,5 @@
 
-// This file simulates AI interactions since we're not actually implementing the server-side components
-// In a real implementation, this would connect to Gemini API
+// This file contains the actual implementations for connecting to Google's Gemini API
 
 export interface AIConfig {
   model?: string;
@@ -28,35 +27,39 @@ export async function estimateDailyProductivity(
     console.log("Estimating productivity with data:", input.trackedData);
     console.log("Using model:", input.model);
     
-    // شبیه‌سازی تاخیر درخواست به API
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/' + input.model + ':generateContent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': input.userApiKey
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ 
+              text: `به عنوان یک دستیار هوش مصنوعی متخصص در بهره‌وری عمل کن. لطفاً این داده‌های فعالیت روزانه را تحلیل کن و یک تخمین از بهره‌وری ارائه بده. نکات کلیدی و پیشنهادهایی برای بهبود را نیز شامل کن. تمام پاسخ را به زبان فارسی بنویس.
+
+داده‌های فعالیت:
+${input.trackedData}` 
+            }]
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
     
-    // در یک پیاده‌سازی واقعی، اینجا API جمنای فراخوانی می‌شود
-    // const response = await fetch('https://generativelanguage.googleapis.com/v1/models/' + input.model + ':generateContent', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'x-goog-api-key': input.userApiKey
-    //   },
-    //   body: JSON.stringify({
-    //     contents: [
-    //       {
-    //         role: 'user',
-    //         parts: [{ text: `تحلیل بهره‌وری روزانه بر اساس این داده‌ها:\n${input.trackedData}` }]
-    //       }
-    //     ]
-    //   })
-    // });
-    // const data = await response.json();
-    // const productivityEstimate = data.candidates[0].content.parts[0].text;
+    if (!data.candidates || data.candidates.length === 0) {
+      if (data.promptFeedback?.blockReason) {
+        throw new Error(`درخواست شما توسط فیلترهای ایمنی جمنای مسدود شد: ${data.promptFeedback.blockReason}`);
+      }
+      throw new Error("پاسخی از هوش مصنوعی دریافت نشد. لطفاً مجدداً تلاش کنید.");
+    }
     
-    return {
-      productivityEstimate: `بر اساس داده‌های شما، به نظر می‌رسد امروز بهره‌وری خوبی داشته‌اید! 
-      شما بیشتر زمان خود را روی ${input.trackedData.split(' ')[0]} متمرکز کرده‌اید. 
-      پیشنهاد می‌کنم فردا زمان استراحت بیشتری بین جلسات مطالعه در نظر بگیرید تا بهره‌وری خود را حفظ کنید.
-      
-      (این یک پاسخ شبیه‌سازی شده است - در نسخه واقعی از API جمنای استفاده خواهد شد)`
-    };
+    const productivityEstimate = data.candidates[0].content.parts[0].text;
+    
+    return { productivityEstimate };
   } catch (error) {
     console.error("Error estimating productivity:", error);
     throw new Error(error instanceof Error ? error.message : "مشکلی در تحلیل بهره‌وری به وجود آمد. لطفاً مجدداً تلاش کنید.");
@@ -87,15 +90,61 @@ export async function generateProductivityReport(
     console.log("Generating productivity report with data:", input.weeklyData);
     console.log("Using model:", input.model);
     
-    // شبیه‌سازی تاخیر درخواست به API
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const historicalContext = input.historicalData 
+      ? `\n\nداده‌های تاریخی برای مقایسه:\n${input.historicalData}` 
+      : '';
     
-    // در یک پیاده‌سازی واقعی، اینجا API جمنای فراخوانی می‌شود
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/' + input.model + ':generateContent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': input.userApiKey
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ 
+              text: `به عنوان یک دستیار هوش مصنوعی تحلیلگر داده‌های بهره‌وری عمل کن. لطفاً داده‌های هفتگی زیر را تحلیل کن و یک گزارش جامع ارائه بده که شامل: 1) خلاصه بهره‌وری هفته، 2) تحلیل الگوهای مدیریت زمان، و 3) پیشنهادهایی برای بهینه‌سازی تمرکز و برنامه‌ریزی باشد. تمام پاسخ را به زبان فارسی بنویس.
+
+داده‌های هفتگی:
+${input.weeklyData}${historicalContext}`
+            }]
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    
+    if (!data.candidates || data.candidates.length === 0) {
+      if (data.promptFeedback?.blockReason) {
+        throw new Error(`درخواست شما توسط فیلترهای ایمنی جمنای مسدود شد: ${data.promptFeedback.blockReason}`);
+      }
+      throw new Error("پاسخی از هوش مصنوعی دریافت نشد. لطفاً مجدداً تلاش کنید.");
+    }
+    
+    const fullText = data.candidates[0].content.parts[0].text;
+    
+    // تلاش برای استخراج بخش‌های مختلف گزارش
+    let summary = "", insights = "", optimizationSuggestions = "";
+    
+    const sections = fullText.split(/\n\s*\n/);
+    
+    if (sections.length >= 3) {
+      // فرض می‌کنیم اولین بخش خلاصه، دومی تحلیل الگوها و سومی پیشنهادها است
+      summary = sections[0];
+      insights = sections[1];
+      optimizationSuggestions = sections[2];
+    } else {
+      // اگر نتوانستیم بخش‌ها را جدا کنیم، کل متن را در خلاصه قرار می‌دهیم
+      summary = fullText;
+    }
     
     return {
-      summary: `در هفته گذشته، شما مجموعاً حدود 25 ساعت مطالعه داشته‌اید. بیشترین تمرکز شما روی درس ریاضی با 8 ساعت و سپس فیزیک با 6 ساعت بوده است. (این یک پاسخ شبیه‌سازی شده است)`,
-      insights: `الگوی مطالعه شما نشان می‌دهد که بازدهی شما در صبح‌ها بیشتر است. همچنین، در روزهای سه‌شنبه و پنج‌شنبه بیشترین ساعت مطالعه را داشته‌اید. نکته قابل توجه این است که در زمان‌های کوتاه و متمرکز، کیفیت یادگیری شما بهتر بوده است. (این یک پاسخ شبیه‌سازی شده است)`,
-      optimizationSuggestions: `پیشنهاد می‌کنم برنامه مطالعاتی خود را طوری تنظیم کنید که دروس سنگین‌تر مانند ریاضی را در صبح‌ها مطالعه کنید. همچنین، استفاده از روش پومودورو با ۲۵ دقیقه مطالعه و ۵ دقیقه استراحت می‌تواند به افزایش بهره‌وری کمک کند. (این یک پاسخ شبیه‌سازی شده است)`
+      summary,
+      insights: insights || "اطلاعات کافی برای تحلیل الگوها وجود ندارد.",
+      optimizationSuggestions: optimizationSuggestions || "اطلاعات کافی برای ارائه پیشنهادهای بهینه‌سازی وجود ندارد."
     };
   } catch (error) {
     console.error("Error generating productivity report:", error);
@@ -128,15 +177,62 @@ export async function compareProjectPerformance(
     console.log("Comparing project performance with data:", input);
     console.log("Using model:", input.model);
     
-    // شبیه‌سازی تاخیر درخواست به API
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const goalsContext = input.userGoals 
+      ? `\n\nاهداف کاربر:\n${input.userGoals}` 
+      : '';
     
-    // در یک پیاده‌سازی واقعی، اینجا API جمنای فراخوانی می‌شود
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/' + input.model + ':generateContent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': input.userApiKey
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ 
+              text: `به عنوان یک مشاور تحصیلی هوش مصنوعی عمل کن. لطفاً داده‌های مطالعه فعلی را با داده‌های تاریخی مقایسه کن و یک تحلیل جامع ارائه بده که شامل: 1) خلاصه مقایسه، 2) تفاوت‌های کلیدی شناسایی شده و نقاط قوت یا ضعف، و 3) پیشنهادهایی برای بهینه‌سازی راهبردهای یادگیری باشد. تمام پاسخ را به زبان فارسی بنویس.
+
+داده‌های مطالعه فعلی:
+${input.currentStudyData}
+
+داده‌های مطالعه قبلی:
+${input.historicalData}${goalsContext}`
+            }]
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    
+    if (!data.candidates || data.candidates.length === 0) {
+      if (data.promptFeedback?.blockReason) {
+        throw new Error(`درخواست شما توسط فیلترهای ایمنی جمنای مسدود شد: ${data.promptFeedback.blockReason}`);
+      }
+      throw new Error("پاسخی از هوش مصنوعی دریافت نشد. لطفاً مجدداً تلاش کنید.");
+    }
+    
+    const fullText = data.candidates[0].content.parts[0].text;
+    
+    // تلاش برای استخراج بخش‌های مختلف گزارش
+    let summary = "", deviations = "", recommendations = "";
+    
+    const sections = fullText.split(/\n\s*\n/);
+    
+    if (sections.length >= 3) {
+      summary = sections[0];
+      deviations = sections[1];
+      recommendations = sections[2];
+    } else {
+      summary = fullText;
+    }
     
     return {
-      summary: `با مقایسه عملکرد شما در درس ${input.currentStudyData.split(' ')[0]} با تجربه قبلی، پیشرفت قابل توجهی در روش مطالعه و سرعت یادگیری مشاهده می‌شود. (این یک پاسخ شبیه‌سازی شده است)`,
-      deviations: `تفاوت اصلی این است که این بار شما زمان بیشتری صرف تمرین و حل مسئله کرده‌اید (40% بیشتر). اما همچنان در مرور منظم مطالب قبلی نقطه ضعف دارید. این می‌تواند باعث فراموشی سریع‌تر مطالب در بلندمدت شود. (این یک پاسخ شبیه‌سازی شده است)`,
-      recommendations: `پیشنهاد می‌کنم از روش مرور فاصله‌دار استفاده کنید: مطالب را پس از 1 روز، 3 روز، 7 روز و 14 روز مرور کنید. همچنین، تمرین‌های ترکیبی که مفاهیم جدید و قدیمی را با هم ادغام می‌کنند، می‌تواند به تقویت حافظه بلندمدت کمک کند. (این یک پاسخ شبیه‌سازی شده است)`
+      summary,
+      deviations: deviations || "اطلاعات کافی برای شناسایی تفاوت‌ها وجود ندارد.",
+      recommendations: recommendations || "اطلاعات کافی برای ارائه پیشنهادها وجود ندارد."
     };
   } catch (error) {
     console.error("Error comparing project performance:", error);
@@ -165,40 +261,44 @@ export async function academicChat(
     console.log("Academic chat with question:", input.question);
     console.log("Using model:", input.model);
     
-    // شبیه‌سازی تاخیر درخواست به API
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/' + input.model + ':generateContent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': input.userApiKey
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'system',
+            parts: [{ 
+              text: `تو "ربات رمپ‌آپ"، یک دستیار هوش مصنوعی دوستانه برای دانش‌آموزان هستی. هدف اصلی تو کمک به سوالات درسی و مرتبط با مطالعه است.
+
+اگر سوال درسی یا مرتبط با مطالعه است، پاسخی واضح، کوتاه و مفید به زبان فارسی ارائه بده.
+
+اگر سوال غیردرسی است (مثلاً گپ‌وگفت، فیلم، بازی)، به طور مودبانه به سوال کاربر اشاره کن و سعی کن به آرامی مکالمه را به سمت زمینه درسی هدایت کنی یا یک ارتباط درسی با سوال غیردرسی پیدا کنی.
+
+مودب و دلگرم‌کننده باش و پاسخ‌ها را کوتاه نگه دار. زبان پاسخ‌های خود را فارسی نگه دار.` 
+            }]
+          },
+          {
+            role: 'user',
+            parts: [{ text: input.question }]
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
     
-    // در یک پیاده‌سازی واقعی، اینجا API جمنای فراخوانی می‌شود
-    // const response = await fetch('https://generativelanguage.googleapis.com/v1/models/' + input.model + ':generateContent', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'x-goog-api-key': input.userApiKey
-    //   },
-    //   body: JSON.stringify({
-    //     contents: [
-    //       {
-    //         role: 'user',
-    //         parts: [{ text: input.question }]
-    //       }
-    //     ]
-    //   })
-    // });
-    // const data = await response.json();
-    // const answer = data.candidates[0].content.parts[0].text;
-    
-    let answer = "";
-    
-    // چند پاسخ نمونه برای شبیه‌سازی عملکرد ربات
-    if (input.question.toLowerCase().includes("ریاضی") || input.question.toLowerCase().includes("math")) {
-      answer = "در مورد ریاضی، توصیه می‌کنم ابتدا مفاهیم پایه را به خوبی درک کنید. حل مسائل متنوع و تمرین مداوم کلید موفقیت در ریاضی است. آیا سوال خاصی در مورد یک مبحث ریاضی دارید؟ (این یک پاسخ شبیه‌سازی شده است)";
-    } else if (input.question.toLowerCase().includes("فیزیک") || input.question.toLowerCase().includes("physics")) {
-      answer = "فیزیک ترکیبی از درک مفهومی و حل مسئله است. برای یادگیری بهتر، سعی کنید ارتباط بین فرمول‌ها و کاربردهای واقعی آن‌ها را درک کنید. آزمایش‌های ساده در خانه می‌تواند درک شما را تقویت کند. (این یک پاسخ شبیه‌سازی شده است)";
-    } else if (input.question.toLowerCase().includes("فیلم") || input.question.toLowerCase().includes("بازی")) {
-      answer = "به نظر می‌رسد درباره سرگرمی صحبت می‌کنید! البته استراحت و سرگرمی هم برای مطالعه مؤثر لازم است، اما شاید بهتر باشد بعد از اتمام مطالعه به آن بپردازید. آیا سوال درسی خاصی دارید که بتوانم کمک کنم؟ (این یک پاسخ شبیه‌سازی شده است)";
-    } else {
-      answer = "ممنون از سوال شما! من ربات رمپ‌آپ هستم و آماده‌ام تا در زمینه‌های درسی به شما کمک کنم. لطفاً سوال درسی خود را دقیق‌تر بیان کنید تا بتوانم راهنمایی مناسبی ارائه دهم. (این یک پاسخ شبیه‌سازی شده است)";
+    if (!data.candidates || data.candidates.length === 0) {
+      if (data.promptFeedback?.blockReason) {
+        throw new Error(`درخواست شما توسط فیلترهای ایمنی جمنای مسدود شد: ${data.promptFeedback.blockReason}`);
+      }
+      throw new Error("پاسخی از هوش مصنوعی دریافت نشد. لطفاً مجدداً تلاش کنید.");
     }
+    
+    const answer = data.candidates[0].content.parts[0].text;
     
     return { answer };
   } catch (error) {

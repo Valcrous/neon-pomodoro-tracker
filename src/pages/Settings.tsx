@@ -8,32 +8,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Settings as SettingsIcon } from 'lucide-react';
+import { useGemini } from '@/context/GeminiContext';
 
 const Settings: React.FC = () => {
-  const [apiKey, setApiKey] = useState('');
-  const [geminiModel, setGeminiModel] = useState('gemini-1.5-flash-latest');
-  const [savedApiKey, setSavedApiKey] = useState('');
-  const [savedModel, setSavedModel] = useState('');
+  const { apiKey: savedApiKey, model: savedModel, setApiKey, setModel } = useGemini();
+  const [apiKey, setApiKeyInput] = useState('');
+  const [geminiModel, setGeminiModelInput] = useState('gemini-1.5-flash-latest');
   
-  // Load settings from localStorage on component mount
+  // Load settings from context on component mount
   useEffect(() => {
-    const storedApiKey = localStorage.getItem('geminiApiKey') || '';
-    const storedModel = localStorage.getItem('geminiModel') || 'gemini-1.5-flash-latest';
-    
-    setApiKey(storedApiKey);
-    setGeminiModel(storedModel);
-    setSavedApiKey(storedApiKey);
-    setSavedModel(storedModel);
-  }, []);
+    setApiKeyInput(savedApiKey);
+    setGeminiModelInput(savedModel);
+  }, [savedApiKey, savedModel]);
   
   const handleSaveSettings = () => {
-    // Save settings to localStorage
-    localStorage.setItem('geminiApiKey', apiKey);
-    localStorage.setItem('geminiModel', geminiModel);
-    
-    // Update saved states
-    setSavedApiKey(apiKey);
-    setSavedModel(geminiModel);
+    // Save settings to context (which will save to localStorage)
+    setApiKey(apiKey);
+    setModel(geminiModel);
     
     toast("تنظیمات هوش مصنوعی ذخیره شد", {
       description: "تنظیمات شما با موفقیت ذخیره شدند",
@@ -74,7 +65,7 @@ const Settings: React.FC = () => {
                 id="apiKey"
                 type="password"
                 value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
+                onChange={(e) => setApiKeyInput(e.target.value)}
                 placeholder="کلید API جمنای خود را وارد کنید"
                 className="neon-input"
               />
@@ -94,7 +85,7 @@ const Settings: React.FC = () => {
             
             <div className="space-y-2">
               <Label htmlFor="model">انتخاب مدل جمنای</Label>
-              <Select value={geminiModel} onValueChange={setGeminiModel}>
+              <Select value={geminiModel} onValueChange={setGeminiModelInput}>
                 <SelectTrigger id="model" className="neon-input">
                   <SelectValue placeholder="مدل را انتخاب کنید" />
                 </SelectTrigger>

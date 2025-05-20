@@ -38,13 +38,25 @@ export const GeminiProvider: React.FC<GeminiProviderProps> = ({ children }) => {
     setIsConfigured(!!storedApiKey);
   }, []);
 
-  // Update isConfigured whenever apiKey changes
-  useEffect(() => {
-    setIsConfigured(!!apiKey);
-  }, [apiKey]);
+  const handleSetApiKey = (key: string) => {
+    setApiKey(key);
+    localStorage.setItem('geminiApiKey', key);
+    setIsConfigured(!!key);
+  };
+
+  const handleSetModel = (newModel: string) => {
+    setModel(newModel);
+    localStorage.setItem('geminiModel', newModel);
+  };
 
   return (
-    <GeminiContext.Provider value={{ apiKey, model, setApiKey, setModel, isConfigured }}>
+    <GeminiContext.Provider value={{ 
+      apiKey, 
+      model, 
+      setApiKey: handleSetApiKey, 
+      setModel: handleSetModel, 
+      isConfigured 
+    }}>
       {children}
     </GeminiContext.Provider>
   );
