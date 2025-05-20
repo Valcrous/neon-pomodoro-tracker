@@ -15,7 +15,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[#ea384c] shadow-[0_0_10px_rgba(234,56,76,0.7)] mr-2">
                 <img src="https://cdn.imgurl.ir/uploads/n479793_photo_--_--.jpg" alt="Logo" className="h-full w-full object-cover" />
               </div>
-              <h1 className="neon-text text-2xl mr-4">سایت مدیریت زمان</h1>
+              <h1 className="neon-text text-2xl mr-4">رمپ آپ</h1>
             </div>
             <p className="text-sm text-muted-foreground">by <a href="https://Ya3in.ir" target="_blank" rel="noopener noreferrer" className="neon-text text-xs">Ya3in.ir</a></p>
           </div>
@@ -31,6 +31,16 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 }`}
               >
                 گزارشات
+              </Link>
+              <Link 
+                to="/ai-assistant" 
+                className={`px-3 py-1 rounded-md transition-all duration-300 ${
+                  location.pathname === '/ai-assistant' 
+                    ? 'neon-text bg-neon/10 neon-border' 
+                    : 'text-foreground hover:text-neon'
+                }`}
+              >
+                دستیار هوشمند
               </Link>
               <Link 
                 to="/pomodoro" 

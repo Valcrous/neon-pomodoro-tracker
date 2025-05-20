@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Settings, ClipboardList, Clock } from 'lucide-react';
+import { Settings, ClipboardList, Clock, Brain } from 'lucide-react';
 
 const Navigation: React.FC = () => {
   const location = useLocation();
@@ -18,6 +18,14 @@ const Navigation: React.FC = () => {
       >
         <ClipboardList className="h-5 w-5" />
         <span>گزارشات</span>
+      </Link>
+      
+      <Link 
+        to="/ai-assistant"
+        className={`flex items-center space-x-2 space-x-reverse px-3 py-2 rounded-md ${isActive('/ai-assistant')}`}
+      >
+        <Brain className="h-5 w-5" />
+        <span>دستیار هوشمند</span>
       </Link>
       
       <Link 

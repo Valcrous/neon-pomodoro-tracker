@@ -1,4 +1,3 @@
-
 export interface Report {
   id: string;
   username: string;
@@ -9,3 +8,6 @@ export interface Report {
   description: string;
   created_at?: string;
 }
+
+// Adding this empty type to fix build errors while keeping compatibility
+export interface AppUser {}

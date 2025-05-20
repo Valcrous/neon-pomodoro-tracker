@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/context/ThemeContext";
 import Reports from "./pages/Reports";
+import AIAssistant from "./pages/AIAssistant";
 import Pomodoro from "./pages/Pomodoro";
 import NotFound from "./pages/NotFound";
 
@@ -20,6 +21,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Reports />} />
+            <Route path="/ai-assistant" element={<AIAssistant />} />
             <Route path="/pomodoro" element={<Pomodoro />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
