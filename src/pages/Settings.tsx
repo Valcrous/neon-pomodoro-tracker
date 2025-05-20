@@ -13,7 +13,7 @@ import { useGemini } from '@/context/GeminiContext';
 const Settings: React.FC = () => {
   const { apiKey: savedApiKey, model: savedModel, setApiKey, setModel } = useGemini();
   const [apiKey, setApiKeyInput] = useState('');
-  const [geminiModel, setGeminiModelInput] = useState('gemini-1.5-flash-latest');
+  const [geminiModel, setGeminiModelInput] = useState('gemini-pro');
   
   // Load settings from context on component mount
   useEffect(() => {
@@ -32,8 +32,7 @@ const Settings: React.FC = () => {
   };
   
   const modelOptions = [
-    { value: 'gemini-1.5-flash-latest', label: 'Gemini 1.5 Flash (سریع)' },
-    { value: 'gemini-1.5-pro-latest', label: 'Gemini 1.5 Pro (قوی)' },
+    { value: 'gemini-pro', label: 'Gemini Pro (سریع)' },
     { value: 'gemini-1.0-pro', label: 'Gemini 1.0 Pro (نسخه قدیمی)' },
   ];
   
@@ -98,7 +97,7 @@ const Settings: React.FC = () => {
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
-                مدل Gemini 1.5 Flash سریع‌تر و Gemini 1.5 Pro قوی‌تر است
+                مدل Gemini Pro برای اکثر کاربردها مناسب است
               </p>
             </div>
           </CardContent>

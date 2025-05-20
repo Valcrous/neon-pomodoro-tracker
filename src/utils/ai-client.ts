@@ -27,7 +27,7 @@ export async function estimateDailyProductivity(
     console.log("Estimating productivity with data:", input.trackedData);
     console.log("Using model:", input.model);
     
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/' + input.model + ':generateContent', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,7 +36,6 @@ export async function estimateDailyProductivity(
       body: JSON.stringify({
         contents: [
           {
-            role: 'user',
             parts: [{ 
               text: `به عنوان یک دستیار هوش مصنوعی متخصص در بهره‌وری عمل کن. لطفاً این داده‌های فعالیت روزانه را تحلیل کن و یک تخمین از بهره‌وری ارائه بده. نکات کلیدی و پیشنهادهایی برای بهبود را نیز شامل کن. تمام پاسخ را به زبان فارسی بنویس.
 
@@ -94,7 +93,7 @@ export async function generateProductivityReport(
       ? `\n\nداده‌های تاریخی برای مقایسه:\n${input.historicalData}` 
       : '';
     
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/' + input.model + ':generateContent', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -103,7 +102,6 @@ export async function generateProductivityReport(
       body: JSON.stringify({
         contents: [
           {
-            role: 'user',
             parts: [{ 
               text: `به عنوان یک دستیار هوش مصنوعی تحلیلگر داده‌های بهره‌وری عمل کن. لطفاً داده‌های هفتگی زیر را تحلیل کن و یک گزارش جامع ارائه بده که شامل: 1) خلاصه بهره‌وری هفته، 2) تحلیل الگوهای مدیریت زمان، و 3) پیشنهادهایی برای بهینه‌سازی تمرکز و برنامه‌ریزی باشد. تمام پاسخ را به زبان فارسی بنویس.
 
@@ -181,7 +179,7 @@ export async function compareProjectPerformance(
       ? `\n\nاهداف کاربر:\n${input.userGoals}` 
       : '';
     
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/' + input.model + ':generateContent', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -190,7 +188,6 @@ export async function compareProjectPerformance(
       body: JSON.stringify({
         contents: [
           {
-            role: 'user',
             parts: [{ 
               text: `به عنوان یک مشاور تحصیلی هوش مصنوعی عمل کن. لطفاً داده‌های مطالعه فعلی را با داده‌های تاریخی مقایسه کن و یک تحلیل جامع ارائه بده که شامل: 1) خلاصه مقایسه، 2) تفاوت‌های کلیدی شناسایی شده و نقاط قوت یا ضعف، و 3) پیشنهادهایی برای بهینه‌سازی راهبردهای یادگیری باشد. تمام پاسخ را به زبان فارسی بنویس.
 
@@ -261,7 +258,7 @@ export async function academicChat(
     console.log("Academic chat with question:", input.question);
     console.log("Using model:", input.model);
     
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/' + input.model + ':generateContent', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -270,7 +267,6 @@ export async function academicChat(
       body: JSON.stringify({
         contents: [
           {
-            role: 'system',
             parts: [{ 
               text: `تو "ربات رمپ‌آپ"، یک دستیار هوش مصنوعی دوستانه برای دانش‌آموزان هستی. هدف اصلی تو کمک به سوالات درسی و مرتبط با مطالعه است.
 
@@ -278,12 +274,10 @@ export async function academicChat(
 
 اگر سوال غیردرسی است (مثلاً گپ‌وگفت، فیلم، بازی)، به طور مودبانه به سوال کاربر اشاره کن و سعی کن به آرامی مکالمه را به سمت زمینه درسی هدایت کنی یا یک ارتباط درسی با سوال غیردرسی پیدا کنی.
 
-مودب و دلگرم‌کننده باش و پاسخ‌ها را کوتاه نگه دار. زبان پاسخ‌های خود را فارسی نگه دار.` 
+مودب و دلگرم‌کننده باش و پاسخ‌ها را کوتاه نگه دار. زبان پاسخ‌های خود را فارسی نگه دار.
+
+سوال کاربر: ${input.question}` 
             }]
-          },
-          {
-            role: 'user',
-            parts: [{ text: input.question }]
           }
         ]
       })
@@ -292,8 +286,12 @@ export async function academicChat(
     const data = await response.json();
     
     if (!data.candidates || data.candidates.length === 0) {
+      console.error("API response:", JSON.stringify(data, null, 2));
       if (data.promptFeedback?.blockReason) {
         throw new Error(`درخواست شما توسط فیلترهای ایمنی جمنای مسدود شد: ${data.promptFeedback.blockReason}`);
+      }
+      if (data.error) {
+        throw new Error(`خطای API جمنای: ${data.error.message || JSON.stringify(data.error)}`);
       }
       throw new Error("پاسخی از هوش مصنوعی دریافت نشد. لطفاً مجدداً تلاش کنید.");
     }

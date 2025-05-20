@@ -11,7 +11,7 @@ interface GeminiContextType {
 
 const GeminiContext = createContext<GeminiContextType>({
   apiKey: '',
-  model: 'gemini-1.5-flash-latest',
+  model: 'gemini-pro',
   setApiKey: () => {},
   setModel: () => {},
   isConfigured: false,
@@ -25,13 +25,13 @@ interface GeminiProviderProps {
 
 export const GeminiProvider: React.FC<GeminiProviderProps> = ({ children }) => {
   const [apiKey, setApiKey] = useState('');
-  const [model, setModel] = useState('gemini-1.5-flash-latest');
+  const [model, setModel] = useState('gemini-pro');
   const [isConfigured, setIsConfigured] = useState(false);
 
   useEffect(() => {
     // Load settings from localStorage on component mount
     const storedApiKey = localStorage.getItem('geminiApiKey') || '';
-    const storedModel = localStorage.getItem('geminiModel') || 'gemini-1.5-flash-latest';
+    const storedModel = localStorage.getItem('geminiModel') || 'gemini-pro';
     
     setApiKey(storedApiKey);
     setModel(storedModel);
