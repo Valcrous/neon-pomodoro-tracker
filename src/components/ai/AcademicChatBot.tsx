@@ -3,6 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { academicChat } from '@/utils/ai-client';
 import { Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
+import { useGemini } from '@/context/GeminiContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Message {
   id: number;
@@ -11,6 +13,7 @@ interface Message {
 }
 
 const AcademicChatBot: React.FC = () => {
+  const { apiKey, model, isConfigured } = useGemini();
   const [question, setQuestion] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     { 
@@ -33,6 +36,11 @@ const AcademicChatBot: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!isConfigured) {
+      toast("لطفاً ابتدا کلید API جمنای را در بخش تنظیمات وارد کنید");
+      return;
+    }
+    
     if (!question.trim()) {
       return;
     }
@@ -48,7 +56,11 @@ const AcademicChatBot: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const response = await academicChat({ question });
+      const response = await academicChat({ 
+        question,
+        userApiKey: apiKey,
+        model
+      });
       
       const botMessage: Message = {
         id: Date.now() + 1,
@@ -59,7 +71,7 @@ const AcademicChatBot: React.FC = () => {
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error("Error in chat:", error);
-      toast("خطا در دریافت پاسخ. لطفاً مجدداً تلاش کنید.");
+      toast(error instanceof Error ? error.message : "خطا در دریافت پاسخ. لطفاً مجدداً تلاش کنید.");
     } finally {
       setIsLoading(false);
     }
@@ -68,6 +80,15 @@ const AcademicChatBot: React.FC = () => {
   return (
     <div className="neon-card flex flex-col h-[500px]" dir="rtl">
       <h2 className="neon-text text-xl mb-4">ربات چت درسی رمپ‌آپ</h2>
+      
+      {!isConfigured && (
+        <Alert className="mb-4 bg-yellow-500/10 border-yellow-500 text-foreground">
+          <AlertDescription>
+            برای استفاده از قابلیت‌های هوش مصنوعی، لطفاً ابتدا کلید API جمنای را در بخش{' '}
+            <a href="/settings" className="text-neon underline">تنظیمات</a> وارد کنید.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <div className="flex-grow overflow-y-auto mb-4 bg-background/50 rounded-md border border-neon/30 p-4">
         {messages.map((msg) => (
@@ -97,12 +118,12 @@ const AcademicChatBot: React.FC = () => {
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="سوال درسی خود را بپرسید..."
           className="neon-input flex-grow"
-          disabled={isLoading}
+          disabled={isLoading || !isConfigured}
         />
         <button 
           type="submit" 
           className="neon-button px-3"
-          disabled={isLoading}
+          disabled={isLoading || !isConfigured}
         >
           {isLoading ? (
             <Loader2 className="h-5 w-5 animate-spin" />

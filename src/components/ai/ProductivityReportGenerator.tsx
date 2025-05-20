@@ -3,8 +3,11 @@ import React, { useState } from 'react';
 import { generateProductivityReport } from '@/utils/ai-client';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useGemini } from '@/context/GeminiContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const ProductivityReportGenerator: React.FC = () => {
+  const { apiKey, model, isConfigured } = useGemini();
   const [weeklyData, setWeeklyData] = useState('');
   const [historicalData, setHistoricalData] = useState('');
   const [result, setResult] = useState<{
@@ -17,6 +20,11 @@ const ProductivityReportGenerator: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!isConfigured) {
+      toast("لطفاً ابتدا کلید API جمنای را در بخش تنظیمات وارد کنید");
+      return;
+    }
+    
     if (!weeklyData.trim()) {
       toast("لطفاً داده‌های هفتگی خود را وارد کنید.");
       return;
@@ -28,12 +36,14 @@ const ProductivityReportGenerator: React.FC = () => {
     try {
       const response = await generateProductivityReport({ 
         weeklyData,
-        historicalData: historicalData || undefined
+        historicalData: historicalData || undefined,
+        userApiKey: apiKey,
+        model
       });
       setResult(response);
     } catch (error) {
       console.error("Error generating report:", error);
-      toast("خطا در تولید گزارش. لطفاً مجدداً تلاش کنید.");
+      toast(error instanceof Error ? error.message : "خطا در تولید گزارش. لطفاً مجدداً تلاش کنید.");
     } finally {
       setIsLoading(false);
     }
@@ -42,6 +52,15 @@ const ProductivityReportGenerator: React.FC = () => {
   return (
     <div className="neon-card" dir="rtl">
       <h2 className="neon-text text-xl mb-6">گزارش بهره‌وری هفتگی</h2>
+      
+      {!isConfigured && (
+        <Alert className="mb-6 bg-yellow-500/10 border-yellow-500 text-foreground">
+          <AlertDescription>
+            برای استفاده از قابلیت‌های هوش مصنوعی، لطفاً ابتدا کلید API جمنای را در بخش{' '}
+            <a href="/settings" className="text-neon underline">تنظیمات</a> وارد کنید.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
@@ -54,7 +73,7 @@ const ProductivityReportGenerator: React.FC = () => {
             onChange={(e) => setWeeklyData(e.target.value)}
             className="neon-input w-full min-h-[100px]"
             placeholder="توضیحات کارهای انجام شده در هفته، زمان صرف شده برای هر درس، زمان مطالعه در روزهای مختلف و..."
-            disabled={isLoading}
+            disabled={isLoading || !isConfigured}
           />
         </div>
         
@@ -68,7 +87,7 @@ const ProductivityReportGenerator: React.FC = () => {
             onChange={(e) => setHistoricalData(e.target.value)}
             className="neon-input w-full min-h-[80px]"
             placeholder="توضیحات بهره‌وری در هفته‌های گذشته برای مقایسه (اختیاری)"
-            disabled={isLoading}
+            disabled={isLoading || !isConfigured}
           />
         </div>
         
@@ -76,7 +95,7 @@ const ProductivityReportGenerator: React.FC = () => {
           <button 
             type="submit" 
             className="neon-button flex items-center gap-2"
-            disabled={isLoading}
+            disabled={isLoading || !isConfigured}
           >
             {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             تولید گزارش
